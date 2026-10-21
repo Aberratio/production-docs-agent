@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "document_id": "po-003",
+  "kind": "purchase_order",
+  "source": "hand-authored",
+  "model": null,
+  "recorded_at": null,
+  "extraction": {
+    "order_number": {
+      "value": "2026/10/055",
+      "confidence": "high",
+      "source_text": "Nr: 2026/10/055",
+      "note": null
+    },
+    "order_date": {
+      "value": "2026-10-19",
+      "confidence": "high",
+      "source_text": "Data: 2026-10-19",
+      "note": null
+    },
+    "customer_name": {
+      "value": "Przykładowe Konstrukcje Sp. z o.o.",
+      "confidence": "high",
+      "source_text": "Przykładowe Konstrukcje Sp. z o.o.",
+      "note": null
+    },
+    "contact_person": {
+      "value": "Ewa Wzorcowa",
+      "confidence": "high",
+      "source_text": "Osoba kontaktowa: Ewa Wzorcowa",
+      "note": null
+    },
+    "delivery_date": {
+      "value": null,
+      "confidence": "low",
+      "source_text": "Termin dostawy: do uzgodnienia",
+      "note": "Delivery date is \"do uzgodnienia\" (to be agreed) — no date given."
+    },
+    "delivery_address": {
+      "value": null,
+      "confidence": "high",
+      "source_text": null,
+      "note": "Only the customer’s registered address is given; no delivery address is stated."
+    },
+    "currency": {
+      "value": "PLN",
+      "confidence": "high",
+      "source_text": "Waluta: PLN",
+      "note": null
+    },
+    "payment_terms": {
+      "value": null,
+      "confidence": "high",
+      "source_text": null,
+      "note": "Not stated in the document."
+    },
+    "total_net": {
+      "value": null,
+      "confidence": "high",
+      "source_text": null,
+      "note": "Not stated in the document."
+    },
+    "lines": [
+      {
+        "item_code": {
+          "value": "WSP-60",
+          "confidence": "high",
+          "source_text": "WSP-60",
+          "note": null
+        },
+        "description": {
+          "value": "Wspornik spawany 60x60",
+          "confidence": "high",
+          "source_text": "Wspornik spawany 60x60",
+          "note": null
+        },
+        "quantity": {
+          "value": 80,
+          "confidence": "high",
+          "source_text": "| 80 |",
+          "note": null
+        },
+        "unit": {
+          "value": "szt.",
+          "confidence": "high",
+          "source_text": "szt.",
+          "note": null
+        },
+        "unit_price": {
+          "value": 112,
+          "confidence": "high",
+          "source_text": "112,00",
+          "note": null
+        }
+      },
+      {
+        "item_code": {
+          "value": null,
+          "confidence": "high",
+          "source_text": "| 2 | — |",
+          "note": "Item code column shows a dash."
+        },
+        "description": {
+          "value": "Śruba M12x60 kl. 8.8 ocynk",
+          "confidence": "high",
+          "source_text": "Śruba M12x60 kl. 8.8 ocynk",
+          "note": null
+        },
+        "quantity": {
+          "value": 640,
+          "confidence": "high",
+          "source_text": "| 640 |",
+          "note": null
+        },
+        "unit": {
+          "value": "szt.",
+          "confidence": "high",
+          "source_text": "szt.",
+          "note": null
+        },
+        "unit_price": {
+          "value": null,
+          "confidence": "high",
+          "source_text": null,
+          "note": "Price column is empty for this line."
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "document_id": "po-001",
+  "kind": "purchase_order",
+  "source": "hand-authored",
+  "model": null,
+  "recorded_at": null,
+  "extraction": {
+    "order_number": {
+      "value": "ZK/2026/0412",
+      "confidence": "high",
+      "source_text": "ZAMÓWIENIE NR ZK/2026/0412",
+      "note": null
+    },
+    "order_date": {
+      "value": "2026-10-14",
+      "confidence": "high",
+      "source_text": "Data zamówienia: 2026-10-14",
+      "note": null
+    },
+    "customer_name": {
+      "value": "Odlewnia Fikcyjna Sp. z o.o.",
+      "confidence": "high",
+      "source_text": "Odlewnia Fikcyjna Sp. z o.o.",
+      "note": null
+    },
+    "contact_person": {
+      "value": "Jan Przykładowy",
+      "confidence": "high",
+      "source_text": "Osoba kontaktowa: Jan Przykładowy",
+      "note": null
+    },
+    "delivery_date": {
+      "value": "2026-11-06",
+      "confidence": "high",
+      "source_text": "Termin dostawy: 2026-11-06",
+      "note": null
+    },
+    "delivery_address": {
+      "value": "Magazyn B, ul. Przykładowa 12, 00-000 Testowo",
+      "confidence": "high",
+      "source_text": "Miejsce dostawy: Magazyn B, ul. Przykładowa 12, 00-000 Testowo",
+      "note": null
+    },
+    "currency": {
+      "value": "PLN",
+      "confidence": "high",
+      "source_text": "Waluta: PLN",
+      "note": null
+    },
+    "payment_terms": {
+      "value": "przelew 30 dni",
+      "confidence": "high",
+      "source_text": "Warunki płatności: przelew 30 dni",
+      "note": null
+    },
+    "total_net": {
+      "value": 28380,
+      "confidence": "high",
+      "source_text": "Razem netto: 28 380,00 PLN",
+      "note": null
+    },
+    "lines": [
+      {
+        "item_code": {
+          "value": "WAL-20-H7",
+          "confidence": "high",
+          "source_text": "WAL-20-H7",
+          "note": null
+        },
+        "description": {
+          "value": "Wałek napędowy fi 20 h7, L=240",
+          "confidence": "high",
+          "source_text": "Wałek napędowy fi 20 h7, L=240",
+          "note": null
+        },
+        "quantity": {
+          "value": 400,
+          "confidence": "high",
+          "source_text": "| 400 |",
+          "note": null
+        },
+        "unit": {
+          "value": "szt.",
+          "confidence": "high",
+          "source_text": "szt.",
+          "note": null
+        },
+        "unit_price": {
+          "value": 38.5,
+          "confidence": "high",
+          "source_text": "38,50",
+          "note": null
+        }
+      },
+      {
+        "item_code": {
+          "value": "TUL-35-B",
+          "confidence": "high",
+          "source_text": "TUL-35-B",
+          "note": null
+        },
+        "description": {
+          "value": "Tuleja brązowa 35x40x30",
+          "confidence": "high",
+          "source_text": "Tuleja brązowa 35x40x30",
+          "note": null
+        },
+        "quantity": {
+          "value": 250,
+          "confidence": "high",
+          "source_text": "| 250 |",
+          "note": null
+        },
+        "unit": {
+          "value": "szt.",
+          "confidence": "high",
+          "source_text": "szt.",
+          "note": null
+        },
+        "unit_price": {
+          "value": 21.2,
+          "confidence": "high",
+          "source_text": "21,20",
+          "note": null
+        }
+      },
+      {
+        "item_code": {
+          "value": "KOL-12-S",
+          "confidence": "high",
+          "source_text": "KOL-12-S",
+          "note": null
+        },
+        "description": {
+          "value": "Kołnierz stalowy DN50",
+          "confidence": "high",
+          "source_text": "Kołnierz stalowy DN50",
+          "note": null
+        },
+        "quantity": {
+          "value": 120,
+          "confidence": "high",
+          "source_text": "| 120 |",
+          "note": null
+        },
+        "unit": {
+          "value": "szt.",
+          "confidence": "high",
+          "source_text": "szt.",
+          "note": null
+        },
+        "unit_price": {
+          "value": 64,
+          "confidence": "high",
+          "source_text": "64,00",
+          "note": null
+        }
+      }
+    ]
+  }
+}

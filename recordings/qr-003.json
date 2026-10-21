@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "document_id": "qr-003",
+  "kind": "quality_report",
+  "source": "hand-authored",
+  "model": null,
+  "recorded_at": null,
+  "extraction": {
+    "report_number": {
+      "value": null,
+      "confidence": "high",
+      "source_text": null,
+      "note": "A customer complaint e-mail; it has no report number."
+    },
+    "report_date": {
+      "value": "2026-10-20",
+      "confidence": "medium",
+      "source_text": "Data: 2026-10-20 11:47",
+      "note": "Date the complaint was sent; the inspection date is not stated."
+    },
+    "item_code": {
+      "value": "WSP-60",
+      "confidence": "high",
+      "source_text": "wsporników WSP-60",
+      "note": null
+    },
+    "batch_number": {
+      "value": null,
+      "confidence": "high",
+      "source_text": "Numeru partii nie ma na etykiecie.",
+      "note": "The customer states the label has no batch number."
+    },
+    "order_reference": {
+      "value": "2026/09/031",
+      "confidence": "high",
+      "source_text": "zamówienie 2026/09/031",
+      "note": null
+    },
+    "inspected_qty": {
+      "value": 80,
+      "confidence": "high",
+      "source_text": "Sprawdziliśmy całą dostawę, 80 szt.",
+      "note": null
+    },
+    "acceptance_number": {
+      "value": null,
+      "confidence": "high",
+      "source_text": null,
+      "note": "Not stated in the document."
+    },
+    "nonconforming_qty": {
+      "value": null,
+      "confidence": "low",
+      "source_text": "na kilkunastu sztukach",
+      "note": "\"Kilkanaście\" means roughly 11–19; the exact count is not given."
+    },
+    "defect_description": {
+      "value": "pęknięcia spoin",
+      "confidence": "high",
+      "source_text": "stwierdziliśmy pęknięcia\nspoin",
+      "note": null
+    },
+    "decision": {
+      "value": null,
+      "confidence": "high",
+      "source_text": "Prosimy o decyzję co do dalszego postępowania.",
+      "note": "The customer asks for a decision; none has been taken yet."
+    },
+    "inspector": {
+      "value": "Ewa Wzorcowa",
+      "confidence": "medium",
+      "source_text": "Ewa Wzorcowa\nKontrola jakości, Przykładowe Konstrukcje Sp. z o.o.",
+      "note": "The customer’s quality contact, not the supplier’s inspector."
+    }
+  }
+}

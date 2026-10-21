@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "document_id": "po-002",
+  "kind": "purchase_order",
+  "source": "hand-authored",
+  "model": null,
+  "recorded_at": null,
+  "extraction": {
+    "order_number": {
+      "value": "DM-7781",
+      "confidence": "high",
+      "source_text": "zamówienia nr DM-7781",
+      "note": null
+    },
+    "order_date": {
+      "value": "2026-10-16",
+      "confidence": "medium",
+      "source_text": "Data: 2026-10-16 09:12",
+      "note": "No order date in the text; this is the date the e-mail was sent."
+    },
+    "customer_name": {
+      "value": "Demo Maszyny S.A.",
+      "confidence": "high",
+      "source_text": "Dział Zakupów, Demo Maszyny S.A.",
+      "note": null
+    },
+    "contact_person": {
+      "value": "Anna Testowa",
+      "confidence": "high",
+      "source_text": "Anna Testowa <zakupy@demo-maszyny.example>",
+      "note": null
+    },
+    "delivery_date": {
+      "value": "2026-11-03",
+      "confidence": "low",
+      "source_text": "Dostawa na 03/11",
+      "note": "\"03/11\" has no year and could mean 3 November or 11 March; read as DD/MM in 2026."
+    },
+    "delivery_address": {
+      "value": "ul. Fabryczna 3, Testowo",
+      "confidence": "medium",
+      "source_text": "na adres zakładu w Testowie (ul. Fabryczna 3)",
+      "note": "Assembled from a sentence; no postal code given."
+    },
+    "currency": {
+      "value": "PLN",
+      "confidence": "high",
+      "source_text": "17,90 zł/szt.",
+      "note": null
+    },
+    "payment_terms": {
+      "value": null,
+      "confidence": "low",
+      "source_text": "Płatność standardowo.",
+      "note": "\"Standardowo\" refers to standard terms that are not stated in this e-mail."
+    },
+    "total_net": {
+      "value": null,
+      "confidence": "high",
+      "source_text": null,
+      "note": "No total stated in the e-mail."
+    },
+    "lines": [
+      {
+        "item_code": {
+          "value": "TUL-28-S",
+          "confidence": "high",
+          "source_text": "TUL-28-S",
+          "note": null
+        },
+        "description": {
+          "value": "tuleja stalowa",
+          "confidence": "high",
+          "source_text": "tuleja stalowa TUL-28-S",
+          "note": null
+        },
+        "quantity": {
+          "value": 500,
+          "confidence": "low",
+          "source_text": "ok. 500 szt.",
+          "note": "Approximate quantity (\"ok.\" = about 500)."
+        },
+        "unit": {
+          "value": "szt.",
+          "confidence": "high",
+          "source_text": "500 szt.",
+          "note": null
+        },
+        "unit_price": {
+          "value": 17.9,
+          "confidence": "high",
+          "source_text": "17,90 zł/szt.",
+          "note": null
+        }
+      },
+      {
+        "item_code": {
+          "value": "PD-10",
+          "confidence": "high",
+          "source_text": "PD-10",
+          "note": null
+        },
+        "description": {
+          "value": "podkładka dystansowa",
+          "confidence": "high",
+          "source_text": "podkładka dystansowa PD-10",
+          "note": null
+        },
+        "quantity": {
+          "value": 2000,
+          "confidence": "high",
+          "source_text": "2000 szt.",
+          "note": null
+        },
+        "unit": {
+          "value": "szt.",
+          "confidence": "high",
+          "source_text": "2000 szt.",
+          "note": null
+        },
+        "unit_price": {
+          "value": 0.85,
+          "confidence": "high",
+          "source_text": "po 0,85 zł",
+          "note": null
+        }
+      }
+    ]
+  }
+}
