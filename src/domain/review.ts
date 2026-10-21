@@ -184,9 +184,15 @@ function addIssue(items: ReviewItem[], path: string, issue: Issue): void {
 
 const num = (f: ExtractedField): number | null => (typeof f.value === 'number' ? f.value : null);
 
+function fieldOf(record: Record<string, ExtractedField>, key: string): ExtractedField {
+  const f = record[key];
+  if (!f) throw new Error(`Extraction is missing the "${key}" field.`);
+  return f;
+}
+
 function reviewOrder(data: PurchaseOrderExtraction, doc: string): ReviewItem[] {
   const rec = data as unknown as Record<string, ExtractedField>;
-  const items = ORDER_FIELDS.map((s) => item(s.key, s.label, s, rec[s.key]!, doc));
+  const items = ORDER_FIELDS.map((s) => item(s.key, s.label, s, fieldOf(rec, s.key), doc));
   if (data.lines.length === 0) {
     items.push({
       path: 'lines',
@@ -203,7 +209,14 @@ function reviewOrder(data: PurchaseOrderExtraction, doc: string): ReviewItem[] {
     for (const s of LINE_FIELDS) {
       const unit = line.unit.value;
       items.push(
-        item(`lines.${i}.${s.key}`, `Line ${i + 1} · ${s.label}`, s, lrec[s.key]!, doc, unit),
+        item(
+          `lines.${i}.${s.key}`,
+          `Line ${i + 1} · ${s.label}`,
+          s,
+          fieldOf(lrec, s.key),
+          doc,
+          unit,
+        ),
       );
     }
   });
@@ -237,7 +250,7 @@ function reviewOrder(data: PurchaseOrderExtraction, doc: string): ReviewItem[] {
 
 function reviewReport(data: QualityReportExtraction, doc: string): ReviewItem[] {
   const rec = data as unknown as Record<string, ExtractedField>;
-  const items = REPORT_FIELDS.map((s) => item(s.key, s.label, s, rec[s.key]!, doc));
+  const items = REPORT_FIELDS.map((s) => item(s.key, s.label, s, fieldOf(rec, s.key), doc));
   const inspected = num(data.inspected_qty);
   const bad = num(data.nonconforming_qty);
   const ac = num(data.acceptance_number);

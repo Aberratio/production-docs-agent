@@ -24,7 +24,7 @@ export type ParseResult = { ok: true; value: string | number } | { ok: false; er
 
 /** Parses a human-typed amount, accepting Polish "1 234,50" and plain "1234.5". */
 function parseNumber(input: string): number | null {
-  const compact = input.trim().replace(/[\s ]/g, '');
+  const compact = input.trim().replace(/[\s ]/g, '');
   if (!/^-?\d+([.,]\d+)?$/.test(compact)) return null;
   return Number(compact.replace(',', '.'));
 }
