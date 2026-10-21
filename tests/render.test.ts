@@ -25,6 +25,12 @@ describe('renderDocumentHtml', () => {
     );
   });
 
+  it('escapes HTML in headings and table cells too', () => {
+    expect(renderDocumentHtml('# A <b>&')).toBe('<h1>A &lt;b&gt;&amp;</h1>');
+    expect(renderDocumentHtml('| <x> |\n| "&" |')).toContain('<th>&lt;x&gt;</th>');
+    expect(renderDocumentHtml('| <x> |\n| "&" |')).toContain('<td>&quot;&amp;&quot;</td>');
+  });
+
   it('escapes HTML in the document text', () => {
     expect(renderDocumentHtml('Od: Anna <a@b.example> & "x"')).toBe(
       '<p><span class="ln">Od: Anna &lt;a@b.example&gt; &amp; &quot;x&quot;</span></p>',

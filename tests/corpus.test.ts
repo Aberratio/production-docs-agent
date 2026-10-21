@@ -129,11 +129,14 @@ describe('demo corpus', () => {
     const random = vi.spyOn(Math, 'random').mockImplementation(forbid('Math.random'));
     const now = vi.spyOn(Date, 'now').mockImplementation(forbid('Date.now'));
     try {
-      for (const d of DOCUMENTS) {
-        const { record } = replay(d.id);
-        const columns = d.kind === 'purchase_order' ? ORDER_COLUMNS : QUALITY_COLUMNS;
-        expect(toCsv(columns, toSheetRows(record)).length).toBeGreaterThan(0);
-      }
+      const exportAll = () =>
+        DOCUMENTS.map((d) => {
+          const columns = d.kind === 'purchase_order' ? ORDER_COLUMNS : QUALITY_COLUMNS;
+          return toCsv(columns, toSheetRows(replay(d.id).record));
+        }).join('');
+      const first = exportAll();
+      expect(first.length).toBeGreaterThan(0);
+      expect(exportAll()).toBe(first);
     } finally {
       random.mockRestore();
       now.mockRestore();
