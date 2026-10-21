@@ -145,6 +145,12 @@ function fieldIssues(
         code: 'missing',
         message: f.note ?? 'Required, but not found in the document.',
       });
+    } else if (f.confidence !== 'high') {
+      // Optional, but the model saw something it could not resolve — a human should look.
+      issues.push({
+        code: 'uncertain',
+        message: f.note ?? 'The document mentions this value but it could not be read.',
+      });
     }
     return issues;
   }

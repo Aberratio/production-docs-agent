@@ -9,8 +9,14 @@ export function sure<T>(value: T, source_text: string = String(value)): Extracte
   return { value, confidence: 'high', source_text, note: null };
 }
 
+/** The document clearly does not state this value (high confidence that it is absent). */
 export function absent<T>(note = 'Not stated in the document.'): ExtractedField<T> {
-  return { value: null, confidence: 'low', source_text: null, note };
+  return { value: null, confidence: 'high', source_text: null, note };
+}
+
+/** The document mentions the value but the model could not resolve it, so it left it empty. */
+export function unresolved<T>(source_text: string, note: string): ExtractedField<T> {
+  return { value: null, confidence: 'low', source_text, note };
 }
 
 /** Text of a small, fully consistent order — every `sure()` quote below occurs in it. */

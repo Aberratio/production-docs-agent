@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { reviewExtraction, type ReviewItem } from '../src/domain/review';
-import { absent, cleanOrder, cleanReport, ORDER_TEXT, REPORT_TEXT, sure } from './helpers/builders';
+import {
+  absent,
+  cleanOrder,
+  cleanReport,
+  ORDER_TEXT,
+  REPORT_TEXT,
+  sure,
+  unresolved,
+} from './helpers/builders';
 
 function flagged(items: ReviewItem[]) {
   return Object.fromEntries(
@@ -42,12 +50,36 @@ describe('reviewExtraction — purchase orders', () => {
     });
   });
 
-  it('does not flag a missing optional field', () => {
+  it('does not flag an optional field the document clearly does not state', () => {
     expect(flagged(reviewOrder((o) => (o.contact_person = absent())))).toEqual({});
   });
 
-  it('flags a missing total only when the document states none — total is optional', () => {
+  it('does not flag an absent total — total is optional', () => {
     expect(flagged(reviewOrder((o) => (o.total_net = absent())))).toEqual({});
+  });
+
+  it('flags an optional field the document mentions but the model could not resolve', () => {
+    const items = reviewOrder(
+      (o) =>
+        (o.payment_terms = unresolved(
+          'przelew 30 dni',
+          'Refers to standard terms not given here.',
+        )),
+    );
+    expect(flagged(items)).toEqual({ payment_terms: ['uncertain'] });
+    expect(items.find((i) => i.path === 'payment_terms')?.issues[0]?.message).toBe(
+      'Refers to standard terms not given here.',
+    );
+  });
+
+  it('reports a required field the model could not resolve as missing, with its reason', () => {
+    const items = reviewOrder(
+      (o) => (o.delivery_date = unresolved('2026-11-06', 'Date "to be agreed".')),
+    );
+    expect(flagged(items)).toEqual({ delivery_date: ['missing'] });
+    expect(items.find((i) => i.path === 'delivery_date')?.issues[0]?.message).toBe(
+      'Date "to be agreed".',
+    );
   });
 
   it('flags any value the model was not sure about, carrying its reason', () => {

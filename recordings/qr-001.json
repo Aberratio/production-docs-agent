@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "document_id": "qr-001",
+  "kind": "quality_report",
+  "source": "hand-authored",
+  "model": null,
+  "recorded_at": null,
+  "extraction": {
+    "report_number": {
+      "value": "RKJ/2026/118",
+      "confidence": "high",
+      "source_text": "RAPORT KONTROLI JAKOŚCI NR RKJ/2026/118",
+      "note": null
+    },
+    "report_date": {
+      "value": "2026-10-15",
+      "confidence": "high",
+      "source_text": "Data kontroli: 2026-10-15",
+      "note": null
+    },
+    "item_code": {
+      "value": "WAL-20-H7",
+      "confidence": "high",
+      "source_text": "Wyrób: WAL-20-H7",
+      "note": null
+    },
+    "batch_number": {
+      "value": "P-2026-1009-A",
+      "confidence": "high",
+      "source_text": "Partia: P-2026-1009-A",
+      "note": null
+    },
+    "order_reference": {
+      "value": "ZK/2026/0412",
+      "confidence": "high",
+      "source_text": "Dotyczy zamówienia: ZK/2026/0412",
+      "note": null
+    },
+    "inspected_qty": {
+      "value": 80,
+      "confidence": "high",
+      "source_text": "Liczba sztuk skontrolowanych: 80",
+      "note": null
+    },
+    "acceptance_number": {
+      "value": 2,
+      "confidence": "high",
+      "source_text": "Liczba akceptowana (Ac): 2",
+      "note": null
+    },
+    "nonconforming_qty": {
+      "value": 1,
+      "confidence": "high",
+      "source_text": "Liczba sztuk niezgodnych: 1",
+      "note": null
+    },
+    "defect_description": {
+      "value": "rysa na powierzchni czopa, poza strefą pasowania",
+      "confidence": "high",
+      "source_text": "rysa na powierzchni czopa, poza strefą pasowania",
+      "note": null
+    },
+    "decision": {
+      "value": "accepted",
+      "confidence": "high",
+      "source_text": "Decyzja: PRZYJĘTO",
+      "note": null
+    },
+    "inspector": {
+      "value": "Piotr Próbny",
+      "confidence": "high",
+      "source_text": "Kontroler: Piotr Próbny",
+      "note": null
+    }
+  }
+}

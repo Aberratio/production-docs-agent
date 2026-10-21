@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "document_id": "po-005",
+  "kind": "purchase_order",
+  "source": "hand-authored",
+  "model": null,
+  "recorded_at": null,
+  "extraction": {
+    "order_number": {
+      "value": "4500-2210",
+      "confidence": "high",
+      "source_text": "purchase order 4500-2210",
+      "note": null
+    },
+    "order_date": {
+      "value": "2026-10-20",
+      "confidence": "high",
+      "source_text": "dated 20.10.2026",
+      "note": null
+    },
+    "customer_name": {
+      "value": "Nordwerk Beispiel GmbH",
+      "confidence": "high",
+      "source_text": "Purchasing, Nordwerk Beispiel GmbH",
+      "note": null
+    },
+    "contact_person": {
+      "value": "Max Mustermann",
+      "confidence": "high",
+      "source_text": "Max Mustermann",
+      "note": null
+    },
+    "delivery_date": {
+      "value": "2026-11-27",
+      "confidence": "high",
+      "source_text": "Requested delivery: 27.11.2026",
+      "note": null
+    },
+    "delivery_address": {
+      "value": "Nordwerk Beispiel GmbH, Musterstrasse 1, 00000 Beispielstadt",
+      "confidence": "high",
+      "source_text": "DAP Nordwerk Beispiel GmbH, Musterstrasse 1, 00000 Beispielstadt",
+      "note": null
+    },
+    "currency": {
+      "value": "EUR",
+      "confidence": "high",
+      "source_text": "Total net: EUR 7,590.00",
+      "note": null
+    },
+    "payment_terms": {
+      "value": "45 days net",
+      "confidence": "high",
+      "source_text": "Payment: 45 days net",
+      "note": null
+    },
+    "total_net": {
+      "value": 7590,
+      "confidence": "high",
+      "source_text": "Total net: EUR 7,590.00",
+      "note": null
+    },
+    "lines": [
+      {
+        "item_code": {
+          "value": "KOL-12-S",
+          "confidence": "high",
+          "source_text": "Item KOL-12-S",
+          "note": null
+        },
+        "description": {
+          "value": "Steel flange DN50",
+          "confidence": "high",
+          "source_text": "Steel flange DN50",
+          "note": null
+        },
+        "quantity": {
+          "value": 300,
+          "confidence": "high",
+          "source_text": "qty 300 pcs",
+          "note": null
+        },
+        "unit": {
+          "value": "pcs",
+          "confidence": "high",
+          "source_text": "qty 300 pcs",
+          "note": null
+        },
+        "unit_price": {
+          "value": 15.4,
+          "confidence": "high",
+          "source_text": "unit price EUR 15.40",
+          "note": null
+        }
+      },
+      {
+        "item_code": {
+          "value": "KOL-16-S",
+          "confidence": "high",
+          "source_text": "Item KOL-16-S",
+          "note": null
+        },
+        "description": {
+          "value": "Steel flange DN65",
+          "confidence": "high",
+          "source_text": "Steel flange DN65",
+          "note": null
+        },
+        "quantity": {
+          "value": 150,
+          "confidence": "high",
+          "source_text": "qty 150 pcs",
+          "note": null
+        },
+        "unit": {
+          "value": "pcs",
+          "confidence": "high",
+          "source_text": "qty 150 pcs",
+          "note": null
+        },
+        "unit_price": {
+          "value": 19.8,
+          "confidence": "high",
+          "source_text": "unit price EUR 19.80",
+          "note": null
+        }
+      }
+    ]
+  }
+}
