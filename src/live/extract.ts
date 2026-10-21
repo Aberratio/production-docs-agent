@@ -1,7 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
-import type { DemoDocument } from '../documents/catalog';
-import { parseExtraction, schemaFor, type Extraction } from '../domain/schema';
+import type { DemoDocument } from '../documents/catalog.ts';
+import { parseExtraction, schemaFor, type Extraction } from '../domain/schema.ts';
 
 /**
  * Live extraction with Claude (Node only — never bundled into the browser). Structured output

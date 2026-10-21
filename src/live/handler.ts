@@ -1,15 +1,15 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { findDocument, type DemoDocument } from '../documents/catalog';
-import { PDF_DIR, readDocumentText } from '../documents/node-io';
-import type { Recording } from '../domain/recording';
+import { findDocument, type DemoDocument } from '../documents/catalog.ts';
+import { PDF_DIR, readDocumentText } from '../documents/node-io.ts';
+import type { Recording } from '../domain/recording.ts';
 import {
   extractDocument,
   ExtractionError,
   type ExtractionInput,
   type ParseClient,
-} from './extract';
+} from './extract.ts';
 
 /** Reads what the model gets for a demo document: the PDF bytes, or the e-mail text. */
 export function loadExtractionInput(doc: DemoDocument): ExtractionInput {
@@ -91,6 +91,9 @@ export function createExtractHandler(options: HandlerOptions) {
       }
       if (error instanceof Anthropic.RateLimitError) {
         return { status: 429, body: { error: 'Rate limited — try again shortly.' } };
+      }
+      if (error instanceof Anthropic.APIConnectionError) {
+        return { status: 504, body: { error: 'Could not reach the Claude API.' } };
       }
       if (error instanceof Anthropic.APIError) {
         return { status: 502, body: { error: `Claude API error (${String(error.status)}).` } };

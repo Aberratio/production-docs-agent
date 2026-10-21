@@ -1,7 +1,17 @@
 import type { Plugin } from 'vite';
-import { createExtractHandler, type HandlerOptions } from './handler';
+import { createExtractHandler, type HandlerOptions } from './handler.ts';
 
 const MAX_BODY = 4096;
+
+/** Browsers always send Origin on a cross-origin POST; non-browser clients (curl) send none. */
+function isSameOrigin(origin: string | undefined, host: string | undefined): boolean {
+  if (!origin) return true;
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Adds `POST /api/extract` to the local dev server in live mode (`npm run dev:live`). The key is
@@ -17,6 +27,12 @@ export function liveExtractionPlugin(options: HandlerOptions): Plugin {
       server.middlewares.use('/api/extract', (req, res) => {
         if (req.method !== 'POST') {
           res.statusCode = 405;
+          res.end();
+          return;
+        }
+        if (!isSameOrigin(req.headers.origin, req.headers.host)) {
+          // Another local app or website must not spend the owner's API credits.
+          res.statusCode = 403;
           res.end();
           return;
         }
