@@ -90,7 +90,51 @@ describe('resolveFields — what reaches the ERP', () => {
   });
 });
 
+describe('resolveFields — re-checks after human edits', () => {
+  it('re-opens a total that a corrected quantity no longer matches', () => {
+    const r = resolveFields(items(), { 'lines.0.quantity': { action: 'correct', value: '12' } });
+    expect(byPath(r, 'total_net')).toMatchObject({ status: 'needs_review', value: null });
+    expect(byPath(r, 'total_net').issues.map((i) => i.code)).toEqual(['inconsistent']);
+  });
+
+  it('closes again once the human approves the total', () => {
+    const r = resolveFields(items(), {
+      'lines.0.quantity': { action: 'correct', value: '12' },
+      total_net: { action: 'approve' },
+    });
+    expect(byPath(r, 'total_net')).toMatchObject({ status: 'approved', value: 45 });
+  });
+
+  it('re-opens an untouched delivery date that a corrected order date contradicts', () => {
+    const r = resolveFields(items(), { order_date: { action: 'correct', value: '2026-12-01' } });
+    expect(byPath(r, 'delivery_date')).toMatchObject({ status: 'needs_review', value: null });
+  });
+});
+
 describe('validateDecision', () => {
+  it('refuses to approve a value that fails its format check', () => {
+    const list = items((o) => (o.order_date = sure('03/11', '2026-10-14')));
+    const item = byPath(list, 'order_date');
+    expect(validateDecision(item, { action: 'approve' })).toMatch(/YYYY-MM-DD/);
+    expect(
+      byPath(resolveFields(list, { order_date: { action: 'approve' } }), 'order_date'),
+    ).toMatchObject({
+      status: 'needs_review',
+      value: null,
+    });
+  });
+
+  it('does not let the missing-lines placeholder be approved or corrected', () => {
+    const list = items((o) => (o.lines = []));
+    const item = byPath(list, 'lines');
+    expect(validateDecision(item, { action: 'correct', value: 'x' })).not.toBeNull();
+    expect(
+      byPath(resolveFields(list, { lines: { action: 'correct', value: 'x' } }), 'lines'),
+    ).toMatchObject({
+      status: 'needs_review',
+    });
+  });
+
   it('refuses to approve a missing value', () => {
     const item = byPath(
       items((o) => (o.delivery_date = absent())),

@@ -160,15 +160,53 @@ function fieldIssues(
       message: f.note ?? `The model was not sure about this value (${f.confidence} confidence).`,
     });
   }
+  const notation = notationProblem(s.type, f.source_text);
+  if (notation && !issues.some((i) => i.code === 'uncertain')) {
+    issues.push({ code: 'uncertain', message: notation });
+  }
   const problem = formatProblem(s.type, f.value, unit);
   if (problem) issues.push({ code: 'invalid', message: problem });
-  if (f.source_text !== null && !normalizedDoc.includes(normalizeForMatch(f.source_text))) {
+  const quote = f.source_text?.trim() ?? '';
+  if (quote === '') {
     issues.push({
       code: 'not_in_document',
-      message: `Quoted source "${f.source_text}" does not appear in the document.`,
+      message: 'No source quote — this value cannot be traced to the document.',
+    });
+  } else if (!normalizedDoc.includes(normalizeForMatch(quote))) {
+    issues.push({
+      code: 'not_in_document',
+      message: `Quoted source "${quote}" does not appear in the document.`,
     });
   }
   return issues;
+}
+
+const ISO_DATE_IN_TEXT = /\b\d{4}-\d{2}-\d{2}\b/;
+const DATE_IN_TEXT = /\b(\d{1,2})([./-])(\d{1,2})(?:\2(\d{2,4}))?(?!\d)/;
+// "ok." / "około" / "ca." / "approx" / "about" / "circa" / "kilka…" / "kilkanaście…" / "~"
+const APPROXIMATE = /(?:^|[^\p{L}])(?:ok\.|około|ca\.|approx|about|circa|kilk)|~/iu;
+
+/**
+ * Re-reads the quoted source for notations a value should never be trusted from, whatever
+ * confidence the model reports: a date without a year or with swappable day and month, or an
+ * approximate count.
+ */
+export function notationProblem(type: FieldType, source: string | null): string | null {
+  if (!source) return null;
+  if (type === 'date') {
+    if (ISO_DATE_IN_TEXT.test(source)) return null;
+    const m = DATE_IN_TEXT.exec(source);
+    if (!m) return null;
+    if (!m[4]) return `"${m[0]}" has no year — the year was assumed.`;
+    if (m[2] === '/' && Number(m[1]) <= 12 && Number(m[3]) <= 12) {
+      return `"${m[0]}" could be read as day and month either way round.`;
+    }
+    return null;
+  }
+  if ((type === 'quantity' || type === 'count') && APPROXIMATE.test(source)) {
+    return `"${source}" is an approximation, not an exact count.`;
+  }
+  return null;
 }
 
 function item(
@@ -183,12 +221,7 @@ function item(
   return { path, label, type: s.type, required: s.required, field: f, issues, needsReview: false };
 }
 
-function addIssue(items: ReviewItem[], path: string, issue: Issue): void {
-  const target = items.find((i) => i.path === path);
-  if (target) target.issues.push(issue);
-}
-
-const num = (f: ExtractedField): number | null => (typeof f.value === 'number' ? f.value : null);
+const numberAt = (v: unknown): number | null => (typeof v === 'number' ? v : null);
 
 function fieldOf(record: Record<string, ExtractedField>, key: string): ExtractedField {
   const f = record[key];
@@ -201,7 +234,7 @@ function reviewOrder(data: PurchaseOrderExtraction, doc: string): ReviewItem[] {
   const items = ORDER_FIELDS.map((s) => item(s.key, s.label, s, fieldOf(rec, s.key), doc));
   if (data.lines.length === 0) {
     items.push({
-      path: 'lines',
+      path: LINES_PLACEHOLDER,
       label: 'Order lines',
       type: 'text',
       required: true,
@@ -226,53 +259,73 @@ function reviewOrder(data: PurchaseOrderExtraction, doc: string): ReviewItem[] {
       );
     }
   });
-
-  const ordered = data.order_date.value;
-  const delivery = data.delivery_date.value;
-  if (isIsoDate(ordered) && isIsoDate(delivery) && delivery < ordered) {
-    addIssue(items, 'delivery_date', {
-      code: 'inconsistent',
-      message: `Delivery date ${delivery} is before the order date ${ordered}.`,
-    });
-  }
-
-  const total = num(data.total_net);
-  const lineTotals = data.lines.map((l) => {
-    const q = num(l.quantity);
-    const p = num(l.unit_price);
-    return q !== null && p !== null ? q * p : null;
-  });
-  if (total !== null && lineTotals.length > 0 && lineTotals.every((t) => t !== null)) {
-    const sum = (lineTotals as number[]).reduce((a, b) => a + b, 0);
-    if (Math.abs(sum - total) >= 0.005) {
-      addIssue(items, 'total_net', {
-        code: 'inconsistent',
-        message: `Stated total ${total.toFixed(2)} differs from the sum of the lines ${sum.toFixed(2)}.`,
-      });
-    }
-  }
   return items;
 }
 
 function reviewReport(data: QualityReportExtraction, doc: string): ReviewItem[] {
   const rec = data as unknown as Record<string, ExtractedField>;
-  const items = REPORT_FIELDS.map((s) => item(s.key, s.label, s, fieldOf(rec, s.key), doc));
-  const inspected = num(data.inspected_qty);
-  const bad = num(data.nonconforming_qty);
-  const ac = num(data.acceptance_number);
-  if (inspected !== null && bad !== null && bad > inspected) {
-    addIssue(items, 'nonconforming_qty', {
-      code: 'inconsistent',
-      message: `${bad} nonconforming parts out of ${inspected} inspected.`,
-    });
+  return REPORT_FIELDS.map((s) => item(s.key, s.label, s, fieldOf(rec, s.key), doc));
+}
+
+/** Path of the pseudo-field shown when an order has no lines; it can only be fixed at the source. */
+export const LINES_PLACEHOLDER = 'lines';
+
+export interface CrossFieldIssue {
+  path: string;
+  issue: Issue;
+}
+
+/**
+ * Rules that compare fields with each other. They run on the model's values during review, and
+ * again on the human-resolved values (decisions.ts), so a correction cannot quietly create a
+ * contradiction in a field nobody looked at.
+ */
+export function crossFieldIssues(
+  paths: readonly string[],
+  valueAt: (path: string) => unknown,
+): CrossFieldIssue[] {
+  const out: CrossFieldIssue[] = [];
+  const add = (path: string, message: string) =>
+    out.push({ path, issue: { code: 'inconsistent', message } });
+
+  if (paths.includes('report_number')) {
+    const inspected = numberAt(valueAt('inspected_qty'));
+    const bad = numberAt(valueAt('nonconforming_qty'));
+    const ac = numberAt(valueAt('acceptance_number'));
+    if (inspected !== null && bad !== null && bad > inspected) {
+      add('nonconforming_qty', `${bad} nonconforming parts out of ${inspected} inspected.`);
+    }
+    if (valueAt('decision') === 'accepted' && bad !== null && ac !== null && bad > ac) {
+      add(
+        'decision',
+        `Batch accepted although ${bad} nonconforming parts exceed the acceptance number ${ac}.`,
+      );
+    }
+    return out;
   }
-  if (data.decision.value === 'accepted' && bad !== null && ac !== null && bad > ac) {
-    addIssue(items, 'decision', {
-      code: 'inconsistent',
-      message: `Batch accepted although ${bad} nonconforming parts exceed the acceptance number ${ac}.`,
-    });
+
+  const ordered = valueAt('order_date');
+  const delivery = valueAt('delivery_date');
+  if (isIsoDate(ordered) && isIsoDate(delivery) && delivery < ordered) {
+    add('delivery_date', `Delivery date ${delivery} is before the order date ${ordered}.`);
   }
-  return items;
+  const lineCount = paths.filter((p) => /^lines\.\d+\.quantity$/.test(p)).length;
+  const total = numberAt(valueAt('total_net'));
+  const lineTotals = Array.from({ length: lineCount }, (_, i) => {
+    const q = numberAt(valueAt(`lines.${i}.quantity`));
+    const p = numberAt(valueAt(`lines.${i}.unit_price`));
+    return q !== null && p !== null ? q * p : null;
+  });
+  if (total !== null && lineTotals.length > 0 && lineTotals.every((t) => t !== null)) {
+    const sum = (lineTotals as number[]).reduce((a, b) => a + b, 0);
+    if (Math.abs(sum - total) >= 0.005) {
+      add(
+        'total_net',
+        `Stated total ${total.toFixed(2)} differs from the sum of the lines ${sum.toFixed(2)}.`,
+      );
+    }
+  }
+  return out;
 }
 
 export function reviewExtraction(extraction: Extraction, documentText: string): ReviewItem[] {
@@ -281,6 +334,9 @@ export function reviewExtraction(extraction: Extraction, documentText: string): 
     extraction.kind === 'purchase_order'
       ? reviewOrder(extraction.data, doc)
       : reviewReport(extraction.data, doc);
+  const byPath = new Map(items.map((i) => [i.path, i]));
+  const cross = crossFieldIssues([...byPath.keys()], (p) => byPath.get(p)?.field.value ?? null);
+  for (const { path, issue } of cross) byPath.get(path)?.issues.push(issue);
   for (const i of items) i.needsReview = i.issues.length > 0;
   return items;
 }

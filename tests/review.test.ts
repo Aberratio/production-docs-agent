@@ -238,3 +238,56 @@ describe('reviewExtraction — quality reports', () => {
     expect(flagged(items)).toEqual({ inspected_qty: ['invalid'] });
   });
 });
+
+describe('reviewExtraction — checks that do not trust the model', () => {
+  it.each([[null], ['   ']])(
+    'flags a value with no source quote (%j) — it cannot be traced',
+    (q) => {
+      const items = reviewOrder((o) => (o.currency = { ...sure('PLN'), source_text: q }));
+      expect(flagged(items)).toEqual({ currency: ['not_in_document'] });
+    },
+  );
+
+  const withLine = (line: string) => `${ORDER_TEXT}\n${line}`;
+
+  it.each([
+    ['Dostawa na 03/11', 'no year'],
+    ['dostawa 3.11', 'no year'],
+    ['Delivery 03/11/2026', 'day and month'],
+  ])('flags a date read from ambiguous notation even at high confidence: %s', (quote, why) => {
+    const items = reviewOrder(
+      (o) => (o.delivery_date = sure('2026-11-03', quote)),
+      withLine(quote),
+    );
+    expect(flagged(items)).toEqual({ delivery_date: ['uncertain'] });
+    expect(items.find((i) => i.path === 'delivery_date')?.issues[0]?.message).toContain(why);
+  });
+
+  it.each([['Termin: 27.11.2026'], ['Termin: 13/11/2026'], ['Termin: 2026-11-27']])(
+    'accepts an unambiguous date notation: %s',
+    (quote) => {
+      const items = reviewOrder(
+        (o) => (o.delivery_date = sure('2026-11-27', quote)),
+        withLine(quote),
+      );
+      expect(flagged(items)).toEqual({});
+    },
+  );
+
+  it.each([['ok. 10 szt.'], ['około 10 szt.'], ['approx. 10 pcs'], ['~10 szt.'], ['ca. 10 szt.']])(
+    'flags an approximate quantity even at high confidence: %s',
+    (quote) => {
+      const items = reviewOrder((o) => (o.lines[0]!.quantity = sure(10, quote)), withLine(quote));
+      expect(flagged(items)).toEqual({ 'lines.0.quantity': ['uncertain'] });
+    },
+  );
+
+  it('flags a vague piece count in a quality report even at high confidence', () => {
+    const text = `${REPORT_TEXT}\nna kilkunastu sztukach`;
+    const items = reviewReport(
+      (r) => (r.nonconforming_qty = sure(1, 'na kilkunastu sztukach')),
+      text,
+    );
+    expect(flagged(items)).toEqual({ nonconforming_qty: ['uncertain'] });
+  });
+});
