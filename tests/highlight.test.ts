@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchQuote } from '../src/ui/highlight';
+import { matchQuote } from '../src/ui/highlight.ts';
 
 describe('matchQuote', () => {
   const lines = ['Data: 2026-10-14', 'Termin dostawy: 2026-11-06', '1 WAL-20 400 szt.'];

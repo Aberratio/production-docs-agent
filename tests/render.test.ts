@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderDocumentHtml } from '../src/documents/render';
+import { renderDocumentHtml } from '../src/documents/render.ts';
 
 describe('renderDocumentHtml', () => {
   it('renders a "# " line as the document heading', () => {

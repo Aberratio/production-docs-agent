@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as XLSX from 'xlsx';
-import { csvCell, toCsv, toXlsx } from '../src/domain/export';
+import { csvCell, toCsv, toXlsx } from '../src/domain/export.ts';
 
 describe('csvCell — RFC 4180 escaping', () => {
   it.each([

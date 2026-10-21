@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import type { Cell, SheetRow } from './mapping';
+import type { Cell, SheetRow } from './mapping.ts';
 
 /** Text a spreadsheet would execute as a formula when the CSV is opened (CSV injection). */
 const FORMULA_START = /^[=+\-@\t\r]/;

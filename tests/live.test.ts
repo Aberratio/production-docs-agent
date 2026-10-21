@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { findDocument } from '../src/documents/catalog';
+import { findDocument } from '../src/documents/catalog.ts';
 import {
   buildExtractionRequest,
   DEFAULT_MODEL,
   extractDocument,
   ExtractionError,
   type ParseClient,
-} from '../src/live/extract';
-import { cleanOrder } from './helpers/builders';
+} from '../src/live/extract.ts';
+import { cleanOrder } from './helpers/builders.ts';
 
 const pdfDoc = findDocument('po-001')!;
 const emailDoc = findDocument('po-002')!;

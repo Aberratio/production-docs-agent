@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reviewExtraction, type ReviewItem } from '../src/domain/review';
+import { reviewExtraction, type ReviewItem } from '../src/domain/review.ts';
 import {
   absent,
   cleanOrder,
@@ -8,7 +8,7 @@ import {
   REPORT_TEXT,
   sure,
   unresolved,
-} from './helpers/builders';
+} from './helpers/builders.ts';
 
 function flagged(items: ReviewItem[]) {
   return Object.fromEntries(

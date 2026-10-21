@@ -3,7 +3,7 @@ import type {
   Extraction,
   PurchaseOrderExtraction,
   QualityReportExtraction,
-} from './schema';
+} from './schema.ts';
 
 /**
  * Deterministic review of a model extraction. The model may say it is unsure; this layer never

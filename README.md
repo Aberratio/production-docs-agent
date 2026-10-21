@@ -84,7 +84,9 @@ npm run dev:live              # same UI with an "Extract with Claude" button
 
 `dev:live` runs the Vite dev server with a small middleware (`POST /api/extract`) in the local
 Node process. The key is read from `.env` there and never sent to the browser (it has no `VITE_`
-prefix, so Vite does not expose it). The endpoint only accepts ids from the demo catalog.
+prefix, so Vite does not expose it). The endpoint only accepts ids from the demo catalog,
+`application/json` bodies, and same-origin requests, so another website or local app cannot spend
+your credits.
 
 Model: **`claude-opus-5-5`** (override with `CLAUDE_MODEL` in `.env`), called through the official
 `@anthropic-ai/sdk` with structured output (`client.beta.messages.parse` +
@@ -112,12 +114,13 @@ canonically and replayed without any randomness, so the demo is deterministic.
 | `dev`, `dev:live`   | dev server, recorded or live mode                                            |
 | `build`, `preview`  | static build and preview                                                     |
 | `test`              | Vitest (domain rules, mapping, export, corpus replay, live request building) |
+| `test:e2e`          | build, then Playwright browser test of the review flow, export and embed     |
 | `lint`, `typecheck` | ESLint + Prettier check, `tsc --noEmit`                                      |
 | `record`            | record live extractions (needs a key)                                        |
 | `docs:generate`     | regenerate the demo PDFs from `documents/*.txt` (Playwright Chromium)        |
 | `screenshots`       | regenerate `docs/screenshots/` from the static build                         |
 
-`docs:generate` and `screenshots` need `npx playwright install chromium` once.
+`test:e2e`, `docs:generate` and `screenshots` need `npx playwright install chromium` once.
 
 ## Architecture
 
@@ -143,12 +146,17 @@ Review rules, applied to the model output whatever confidence it claims:
 - a required field without a value → **missing**; an optional field the document mentions but the
   model could not resolve → **uncertain**;
 - confidence below `high` → **uncertain**, with the model's reason;
+- the quoted source is re-read whatever the model claims: a date written without a year (`03/11`)
+  or with swappable day and month (`03/11/2026`), or an approximate count ("ok. 500",
+  "kilkanaście", "~10") → **uncertain**;
 - dates must be real `YYYY-MM-DD` dates, quantities in pieces whole and positive, prices ≥ 0 →
   **invalid**;
-- the quoted `source_text` must occur in the document (case, whitespace and table pipes ignored) →
-  otherwise **not in document** (a cheap hallucination check);
+- every value needs a quoted `source_text` that occurs in the document (case, whitespace and
+  table pipes ignored) → otherwise **not in document** (a cheap hallucination check);
 - cross-field: delivery before order date, stated total ≠ sum of lines (±0.005), more defects than
-  parts inspected, "accepted" with defects above the acceptance number → **contradiction**.
+  parts inspected, "accepted" with defects above the acceptance number → **contradiction**. These
+  run again on the human-resolved values, so a correction cannot quietly contradict a field that
+  was accepted automatically — that field goes back to review.
 
 ## Embedding (kokot.it case study)
 
@@ -173,7 +181,9 @@ Deploy `dist/` under any path (it uses relative URLs), then:
 </script>
 ```
 
-`allow-downloads` is needed for the CSV/XLSX export, `allow-popups` for "Open PDF". Fonts come
+`allow-downloads` is needed for the CSV/XLSX export, `allow-popups` for "Open PDF". The height
+message uses target origin `*` (it carries only a pixel height); tighten it to the site's origin
+when the case-study page exists. Fonts come
 from Google Fonts; all colours, fonts and spacing are CSS custom properties in
 [`src/styles/tokens.css`](src/styles/tokens.css), so the site's brand can replace them in one
 file.
@@ -189,3 +199,8 @@ file.
   no NIP/VAT validation) — the point is the review pattern, not a full ERP integration.
 - "ERP" is a plain JSON record and spreadsheet rows; no real ERP is called.
 - Human decisions live in memory and are lost on reload.
+- A contradiction stated only in prose (po-004's remark "łącznie 1 000 szt." against 1200 in the
+  table) is caught only if the model reports it; the deterministic rules cover fields, not prose.
+- Fonts load from Google Fonts, which sees each visitor's IP; self-host them for a privacy-strict
+  deployment.
+- Regenerated PDFs are not byte-identical (Chromium stamps a creation date); their text is.

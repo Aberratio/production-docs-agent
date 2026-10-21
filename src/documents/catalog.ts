@@ -1,4 +1,4 @@
-import type { DocumentKind } from '../domain/schema';
+import type { DocumentKind } from '../domain/schema.ts';
 
 export type DocumentFormat = 'pdf' | 'email';
 

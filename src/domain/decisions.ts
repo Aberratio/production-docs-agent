@@ -5,7 +5,7 @@ import {
   type FieldType,
   type Issue,
   type ReviewItem,
-} from './review';
+} from './review.ts';
 
 /** What a human did with one field in the review panel. */
 export type Decision = { action: 'approve' } | { action: 'correct'; value: string };

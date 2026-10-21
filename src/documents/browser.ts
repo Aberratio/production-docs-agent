@@ -1,4 +1,4 @@
-import { parseRecording, type Recording } from '../domain/recording';
+import { parseRecording, type Recording } from '../domain/recording.ts';
 
 /**
  * Demo data bundled into the static build: document texts and recorded runs. Nothing is fetched

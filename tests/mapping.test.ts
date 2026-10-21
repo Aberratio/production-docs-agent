@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveFields } from '../src/domain/decisions';
+import { resolveFields } from '../src/domain/decisions.ts';
 import {
   ORDER_COLUMNS,
   QUALITY_COLUMNS,
@@ -7,10 +7,17 @@ import {
   toSheetRows,
   type QualityRecord,
   type SalesOrderRecord,
-} from '../src/domain/mapping';
-import { reviewExtraction } from '../src/domain/review';
-import type { Extraction } from '../src/domain/schema';
-import { absent, cleanOrder, cleanReport, ORDER_TEXT, REPORT_TEXT, sure } from './helpers/builders';
+} from '../src/domain/mapping.ts';
+import { reviewExtraction } from '../src/domain/review.ts';
+import type { Extraction } from '../src/domain/schema.ts';
+import {
+  absent,
+  cleanOrder,
+  cleanReport,
+  ORDER_TEXT,
+  REPORT_TEXT,
+  sure,
+} from './helpers/builders.ts';
 
 function map(extraction: Extraction, text: string, decisions = {}) {
   const resolved = resolveFields(reviewExtraction(extraction, text), decisions);

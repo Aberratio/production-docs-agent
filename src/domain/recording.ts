@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PurchaseOrderExtraction, QualityReportExtraction, type Extraction } from './schema';
+import { PurchaseOrderExtraction, QualityReportExtraction, type Extraction } from './schema.ts';
 
 /**
  * A recorded extraction run, stored as JSON in `recordings/<document_id>.json`. The demo replays

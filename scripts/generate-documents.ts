@@ -8,9 +8,9 @@
 import { copyFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
-import { DOCUMENTS } from '../src/documents/catalog';
-import { renderDocumentHtml } from '../src/documents/render';
-import { DOCUMENTS_DIR, PDF_DIR, readDocumentText } from '../src/documents/node-io';
+import { DOCUMENTS } from '../src/documents/catalog.ts';
+import { renderDocumentHtml } from '../src/documents/render.ts';
+import { DOCUMENTS_DIR, PDF_DIR, readDocumentText } from '../src/documents/node-io.ts';
 
 const PAGE_CSS = `
   @page { size: A4; margin: 22mm 18mm 24mm; }

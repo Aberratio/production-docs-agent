@@ -1,5 +1,5 @@
-import type { ResolvedField } from './decisions';
-import type { Extraction } from './schema';
+import type { ResolvedField } from './decisions.ts';
+import type { Extraction } from './schema.ts';
 
 /**
  * Mapping from resolved fields to simple "ERP" records (plain JSON) and to flat spreadsheet rows.

@@ -10,10 +10,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { DOCUMENTS, findDocument } from '../src/documents/catalog';
-import { RECORDINGS_DIR } from '../src/documents/node-io';
-import { serializeRecording } from '../src/domain/recording';
-import { extractToRecording } from '../src/live/handler';
+import { DOCUMENTS, findDocument } from '../src/documents/catalog.ts';
+import { RECORDINGS_DIR } from '../src/documents/node-io.ts';
+import { serializeRecording } from '../src/domain/recording.ts';
+import { extractToRecording } from '../src/live/handler.ts';
 
 try {
   process.loadEnvFile('.env');

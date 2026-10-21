@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { parseCorrection, resolveFields, validateDecision } from '../src/domain/decisions';
-import { reviewExtraction } from '../src/domain/review';
-import { absent, cleanOrder, ORDER_TEXT, sure } from './helpers/builders';
+import { parseCorrection, resolveFields, validateDecision } from '../src/domain/decisions.ts';
+import { reviewExtraction } from '../src/domain/review.ts';
+import { absent, cleanOrder, ORDER_TEXT, sure } from './helpers/builders.ts';
 
 function items(mutate: (o: ReturnType<typeof cleanOrder>) => void = () => undefined) {
   const data = cleanOrder();
