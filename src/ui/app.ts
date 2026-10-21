@@ -29,6 +29,9 @@ interface State {
   selected: string | null;
   editing: string | null;
   editError: string | null;
+  /** Element to focus after the next render (the editor it replaced is gone). */
+  focusAfter: string | null;
+  exportError: string | null;
   live: { busy: boolean; error: string | null };
 }
 
@@ -63,6 +66,8 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     selected: null,
     editing: null,
     editError: null,
+    focusAfter: null,
+    exportError: null,
     live: { busy: false, error: null },
   };
 
@@ -86,12 +91,36 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     );
     state.editing = null;
     state.editError = null;
+    state.focusAfter = `field:${path}`;
     render();
+  };
+
+  const closeEditor = (path: string) => {
+    state.editing = null;
+    state.editError = null;
+    state.focusAfter = `edit:${path}`;
+    render();
+  };
+
+  const selectField = (path: string) => {
+    if (state.selected === path) return;
+    state.selected = path;
+    highlightSource(viewOf(state.docId));
+    markSelected();
+  };
+
+  const runExport = (task: () => Promise<void>) => {
+    state.exportError = null;
+    task().catch((error: unknown) => {
+      state.exportError = `Export failed: ${error instanceof Error ? error.message : String(error)}`;
+      render();
+    });
   };
 
   function render(): void {
     const active = document.activeElement as HTMLElement | null;
-    const focusKey = active?.dataset['focus'];
+    const focusKey = state.focusAfter ?? active?.dataset['focus'];
+    state.focusAfter = null;
     const view = viewOf(state.docId);
     root.replaceChildren(header(), tabs(), workspace(view), footer());
     highlightSource(view);
@@ -107,7 +136,8 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     const tab = strip?.querySelector<HTMLElement>('[aria-current="true"]');
     if (!strip || !tab || strip.scrollWidth <= strip.clientWidth) return;
     // Not scrollIntoView: inside the case-study iframe that would also scroll the host page.
-    strip.scrollLeft = tab.offsetLeft - strip.offsetLeft - 16;
+    strip.scrollLeft =
+      tab.offsetLeft - strip.offsetLeft - (strip.clientWidth - tab.offsetWidth) / 2;
   }
 
   function header(): HTMLElement {
@@ -370,11 +400,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
       };
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') save();
-        if (e.key === 'Escape') {
-          state.editing = null;
-          state.editError = null;
-          render();
-        }
+        if (e.key === 'Escape') closeEditor(f.path);
       });
       children.push(
         h(
@@ -387,11 +413,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
             {
               class: 'btn btn-ghost',
               type: 'button',
-              onClick: () => {
-                state.editing = null;
-                state.editError = null;
-                render();
-              },
+              onClick: () => closeEditor(f.path),
             },
             'Cancel',
           ),
@@ -462,22 +484,15 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
           .filter(Boolean)
           .join(' '),
         'data-path': f.path,
+        role: 'group',
+        'aria-label': `${f.label}: ${STATUS_LABEL[f.status]}`,
+        // Focusable so keyboard users can select a field and see its source highlighted.
         tabindex: '0',
         'data-focus': `field:${f.path}`,
         onFocus: (e: Event) => {
-          if (e.target === e.currentTarget && state.selected !== f.path) {
-            state.selected = f.path;
-            highlightSource(viewOf(state.docId));
-            markSelected();
-          }
+          if (e.target === e.currentTarget) selectField(f.path);
         },
-        onClick: () => {
-          if (state.selected !== f.path) {
-            state.selected = f.path;
-            highlightSource(viewOf(state.docId));
-            markSelected();
-          }
-        },
+        onClick: () => selectField(f.path),
       },
       ...children,
     );
@@ -531,7 +546,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
             class: 'btn btn-primary',
             type: 'button',
             'data-focus': 'csv',
-            onClick: () => void exportCsv(view),
+            onClick: () => runExport(() => exportCsv(view)),
           },
           'Export CSV',
         ),
@@ -541,11 +556,12 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
             class: 'btn btn-ghost',
             type: 'button',
             'data-focus': 'xlsx',
-            onClick: () => void exportXlsx(),
+            onClick: () => runExport(exportXlsx),
           },
           'Export XLSX (all documents)',
         ),
       ),
+      state.exportError ? h('p', { class: 'alert', role: 'alert' }, state.exportError) : null,
       h(
         'p',
         { class: 'export-note' },
