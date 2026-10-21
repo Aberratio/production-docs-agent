@@ -1,24 +1,29 @@
-import { DOCUMENTS, findDocument, type DemoDocument } from '../documents/catalog';
-import { documentText, recordedRun } from '../documents/browser';
-import { renderDocumentHtml } from '../documents/render';
+import { DOCUMENTS, findDocument, type DemoDocument } from '../documents/catalog.ts';
+import { documentText, recordedRun } from '../documents/browser.ts';
+import { renderDocumentHtml } from '../documents/render.ts';
 import {
   resolveFields,
   validateDecision,
   type Decision,
   type ResolvedField,
-} from '../domain/decisions';
+} from '../domain/decisions.ts';
 import {
   ORDER_COLUMNS,
   QUALITY_COLUMNS,
   toErpRecord,
   toSheetRows,
   type ErpRecord,
-} from '../domain/mapping';
-import { extractionOf, parseRecording, type Recording } from '../domain/recording';
-import { reviewExtraction, type IssueCode, type ReviewItem } from '../domain/review';
-import { buildWorkbookSheets } from '../domain/workbook';
-import { download, h } from './dom';
-import { matchQuote } from './highlight';
+} from '../domain/mapping.ts';
+import { extractionOf, parseRecording, type Recording } from '../domain/recording.ts';
+import {
+  LINES_PLACEHOLDER,
+  reviewExtraction,
+  type IssueCode,
+  type ReviewItem,
+} from '../domain/review.ts';
+import { buildWorkbookSheets } from '../domain/workbook.ts';
+import { download, h } from './dom.ts';
+import { matchQuote } from './highlight.ts';
 
 const LIVE = import.meta.env.MODE === 'live';
 
@@ -29,6 +34,8 @@ interface State {
   selected: string | null;
   editing: string | null;
   editError: string | null;
+  /** What the user typed into a correction that failed validation (kept across re-render). */
+  editDraft: string | null;
   /** Element to focus after the next render (the editor it replaced is gone). */
   focusAfter: string | null;
   exportError: string | null;
@@ -66,6 +73,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     selected: null,
     editing: null,
     editError: null,
+    editDraft: null,
     focusAfter: null,
     exportError: null,
     live: { busy: false, error: null },
@@ -91,6 +99,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     );
     state.editing = null;
     state.editError = null;
+    state.editDraft = null;
     state.focusAfter = `field:${path}`;
     render();
   };
@@ -98,6 +107,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
   const closeEditor = (path: string) => {
     state.editing = null;
     state.editError = null;
+    state.editDraft = null;
     state.focusAfter = `edit:${path}`;
     render();
   };
@@ -183,6 +193,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
               state.selected = null;
               state.editing = null;
               state.live.error = null;
+              state.exportError = null;
               render();
             },
           },
@@ -383,7 +394,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
       const input = h('input', {
         class: 'input',
         type: 'text',
-        value: shown === null ? '' : String(shown),
+        value: state.editDraft ?? (shown === null ? '' : String(shown)),
         'aria-label': `Correct ${f.label}`,
         'data-focus': `input:${f.path}`,
         placeholder: f.type === 'date' ? 'YYYY-MM-DD' : '',
@@ -393,6 +404,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
         const error = validateDecision(item, decision, items);
         if (error) {
           state.editError = error;
+          state.editDraft = input.value;
           render();
           return;
         }
@@ -425,7 +437,10 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
       });
     } else {
       const actions: HTMLElement[] = [];
-      if (f.status === 'needs_review' && f.proposed !== null) {
+      if (
+        f.status === 'needs_review' &&
+        validateDecision(item, { action: 'approve' }, items) === null
+      ) {
         actions.push(
           h(
             'button',
@@ -439,23 +454,27 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
           ),
         );
       }
-      actions.push(
-        h(
-          'button',
-          {
-            class: f.status === 'needs_review' ? 'btn btn-ghost' : 'btn btn-quiet',
-            type: 'button',
-            'data-focus': `edit:${f.path}`,
-            onClick: () => {
-              state.editing = f.path;
-              state.editError = null;
-              state.selected = f.path;
-              render();
+      // The missing-lines placeholder can only be fixed at the source, never typed in here.
+      if (f.path !== LINES_PLACEHOLDER) {
+        actions.push(
+          h(
+            'button',
+            {
+              class: f.status === 'needs_review' ? 'btn btn-ghost' : 'btn btn-quiet',
+              type: 'button',
+              'data-focus': `edit:${f.path}`,
+              onClick: () => {
+                state.editing = f.path;
+                state.editError = null;
+                state.editDraft = null;
+                state.selected = f.path;
+                render();
+              },
             },
-          },
-          f.status === 'needs_review' ? 'Correct…' : 'Edit',
-        ),
-      );
+            f.status === 'needs_review' ? 'Correct…' : 'Edit',
+          ),
+        );
+      }
       if (f.status === 'approved' || f.status === 'corrected') {
         actions.push(
           h(
@@ -498,6 +517,15 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     );
   }
 
+  /** Scrolls only the document pane — never the page, and never the host page around an iframe. */
+  function revealInPaper(paper: HTMLElement, target: HTMLElement | undefined): void {
+    if (!target) return;
+    const box = paper.getBoundingClientRect();
+    const t = target.getBoundingClientRect();
+    if (t.top >= box.top && t.bottom <= box.bottom) return;
+    paper.scrollTop += t.top - box.top - box.height / 3;
+  }
+
   function markSelected(): void {
     root.querySelectorAll('.field.is-selected').forEach((el) => el.classList.remove('is-selected'));
     if (state.selected) {
@@ -528,7 +556,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
       ...match.groups.map((i) => groups[i]),
     ].filter((el): el is HTMLElement => el !== undefined);
     targets.forEach((el) => el.classList.add('hl'));
-    targets[0]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    revealInPaper(paper as HTMLElement, targets[0]);
   }
 
   function exportBar(view: View, fields: ResolvedField[]): HTMLElement {
@@ -579,14 +607,14 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
   }
 
   async function exportCsv(view: View): Promise<void> {
-    const { toCsv } = await import('../domain/export');
+    const { toCsv } = await import('../domain/export.ts');
     const columns = view.record.record_type === 'sales_order' ? ORDER_COLUMNS : QUALITY_COLUMNS;
     const csv = toCsv(columns, toSheetRows(view.record), { bom: true });
     download(`${view.doc.id}-${view.record.record_type}.csv`, csv, 'text/csv;charset=utf-8');
   }
 
   async function exportXlsx(): Promise<void> {
-    const { toXlsx } = await import('../domain/export');
+    const { toXlsx } = await import('../domain/export.ts');
     const entries = DOCUMENTS.map((d) => {
       const v = viewOf(d.id);
       return { documentId: d.id, extraction: extractionOf(v.run), fields: v.fields };

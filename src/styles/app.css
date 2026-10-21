@@ -481,7 +481,7 @@ pre {
   font-size: var(--text-sm);
   color: var(--color-text);
   background: var(--color-bg);
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--color-border-input);
   border-radius: var(--radius-sm);
 }
 

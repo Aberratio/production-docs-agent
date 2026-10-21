@@ -1,4 +1,4 @@
-import { normalizeForMatch } from '../domain/review';
+import { normalizeForMatch } from '../domain/review.ts';
 
 export interface QuoteMatch {
   /** Indices of single lines (paragraph lines, table rows) containing the quote. */

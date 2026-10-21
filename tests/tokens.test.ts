@@ -88,6 +88,7 @@ describe('design tokens', () => {
     ['accent on accent-soft', () => c('accent'), () => tinted('accent-soft'), 4.5],
     ['danger on danger-soft', () => c('danger'), () => tinted('danger-soft'), 4.5],
     ['text on highlight', () => c('text'), () => tinted('highlight', 'bg'), 4.5],
+    ['input border on bg (non-text)', () => c('border-input'), () => c('bg'), 3],
   ];
 
   it.each(pairs)('meet WCAG AA contrast: %s', (_name, fg, bg, min) => {
