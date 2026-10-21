@@ -15,7 +15,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['tests/**/*.ts'],
+    files: ['tests/**/*.ts', 'e2e/**/*.ts'],
     rules: { '@typescript-eslint/no-non-null-assertion': 'off' },
   },
 );

@@ -85,8 +85,10 @@ npm run dev:live              # same UI with an "Extract with Claude" button
 `dev:live` runs the Vite dev server with a small middleware (`POST /api/extract`) in the local
 Node process. The key is read from `.env` there and never sent to the browser (it has no `VITE_`
 prefix, so Vite does not expose it). The endpoint only accepts ids from the demo catalog,
-`application/json` bodies, and same-origin requests, so another website or local app cannot spend
-your credits.
+`application/json` bodies, and requests whose `Origin` is the dev server itself, so a web page
+open in your browser (another site or another localhost app) cannot spend your credits. Clients
+that send no `Origin` (curl, scripts) are accepted: anything that can run them on your machine
+can read `.env` anyway.
 
 Model: **`claude-opus-5-5`** (override with `CLAUDE_MODEL` in `.env`), called through the official
 `@anthropic-ai/sdk` with structured output (`client.beta.messages.parse` +
@@ -199,6 +201,13 @@ file.
   no NIP/VAT validation) — the point is the review pattern, not a full ERP integration.
 - "ERP" is a plain JSON record and spreadsheet rows; no real ERP is called.
 - Human decisions live in memory and are lost on reload.
+- Some demo flags rely on the model's own confidence rather than a deterministic rule: po-002's
+  order date (e-mail sent date), delivery address and payment terms, po-004's quantity, qr-003's
+  report date and inspector. A real recording that reports these with high confidence would not
+  flag them; the corpus test would show it.
+- The review checks that the quoted source exists, not that the value is read correctly from it;
+  a confident misreading backed by a real quote is not caught.
+- An explicit approval stands even if a later correction elsewhere contradicts it.
 - A contradiction stated only in prose (po-004's remark "łącznie 1 000 szt." against 1200 in the
   table) is caught only if the model reports it; the deterministic rules cover fields, not prose.
 - Fonts load from Google Fonts, which sees each visitor's IP; self-host them for a privacy-strict

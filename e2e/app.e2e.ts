@@ -2,7 +2,9 @@
  * Browser test of the static build (recorded mode): the review flow a visitor of the case study
  * goes through, the export, and the embed switch. Run with `npm run test:e2e` (builds first).
  */
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import * as XLSX from 'xlsx';
 import { chromium, type Browser, type Page } from 'playwright';
 import { preview, type PreviewServer } from 'vite';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -38,6 +40,15 @@ beforeEach(async () => {
 const field = (label: string) => page.getByRole('group', { name: new RegExp(`^${label}:`) });
 
 describe('static build', () => {
+  it('contains no API key material or server code', () => {
+    const files = readdirSync('dist/assets').map((f) =>
+      readFileSync(join('dist/assets', f), 'utf8'),
+    );
+    for (const text of files) {
+      expect(text).not.toMatch(/ANTHROPIC_API_KEY|sk-ant-|@anthropic-ai\/sdk|api\.anthropic\.com/);
+    }
+  });
+
   it('uses relative asset paths so it works under any sub-path', () => {
     const html = readFileSync('dist/index.html', 'utf8');
     expect(html).toMatch(/src="\.\/assets\//);
@@ -98,6 +109,46 @@ describe('review flow (recorded mode)', () => {
     expect(cells[cols.indexOf('delivery_date')]).toBe('');
     expect(cells[cols.indexOf('order_number')]).toBe('DM-7781');
     expect(first).toContain('needs_review');
+  });
+
+  it('exports human decisions: approved and corrected values reach the CSV and XLSX', async () => {
+    await page.goto(`${base}?doc=po-002`);
+    await field('Delivery date').getByRole('button', { name: 'Approve' }).click();
+    await field('Payment terms').getByRole('button', { name: 'Correct…' }).click();
+    const input = page.getByRole('textbox', { name: 'Correct Payment terms' });
+    await input.fill('przelew 14 dni');
+    await input.press('Enter');
+    await expect
+      .poll(() => field('Payment terms').getAttribute('aria-label'))
+      .toBe('Payment terms: corrected');
+
+    const [csv] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Export CSV' }).click(),
+    ]);
+    const [header, row] = readFileSync(await csv.path(), 'utf8')
+      .trimStart()
+      .split('\r\n');
+    const cols = header?.split(',') ?? [];
+    const cells = row?.split(',') ?? [];
+    expect(cells[cols.indexOf('delivery_date')]).toBe('2026-11-03');
+    expect(cells[cols.indexOf('payment_terms')]).toBe('przelew 14 dni');
+
+    const [xlsx] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Export XLSX (all documents)' }).click(),
+    ]);
+    const wb = XLSX.read(readFileSync(await xlsx.path()));
+    expect(wb.SheetNames).toEqual(['orders', 'quality', 'review_log']);
+    const log = XLSX.utils.sheet_to_json<Record<string, string>>(wb.Sheets['review_log']!);
+    expect(log).toContainEqual(
+      expect.objectContaining({
+        source_document: 'po-002',
+        field: 'payment_terms',
+        status: 'corrected',
+      }),
+    );
+    expect(errors).toEqual([]);
   });
 
   it('hides the header and footer when embedded', async () => {
