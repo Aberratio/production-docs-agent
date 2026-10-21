@@ -1,8 +1,9 @@
+import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it } from 'vitest';
-import { createExtractHandler } from '../src/live/handler';
-import type { ParseClient } from '../src/live/extract';
-import { parseRecording } from '../src/domain/recording';
-import { cleanReport } from './helpers/builders';
+import { createExtractHandler } from '../src/live/handler.ts';
+import type { ParseClient } from '../src/live/extract.ts';
+import { parseRecording } from '../src/domain/recording.ts';
+import { cleanReport } from './helpers/builders.ts';
 
 function client(parsed_output: unknown): ParseClient & { used: number } {
   const c = {
@@ -78,4 +79,33 @@ describe('createExtractHandler', () => {
     expect((await handle(body, undefined)).status).toBe(415);
     expect(c.used).toBe(0);
   });
+});
+
+describe('createExtractHandler — Claude API failures', () => {
+  const failing = (error: unknown): ParseClient =>
+    ({ beta: { messages: { parse: () => Promise.reject(error) } } }) as unknown as ParseClient;
+  const run = (error: unknown) =>
+    createExtractHandler({ apiKey: 'sk-secret', clientFactory: () => failing(error), now })(
+      JSON.stringify({ documentId: 'po-001' }),
+      JSON_TYPE,
+    );
+  const headers = new Headers();
+
+  it.each([
+    ['rejected key', new Anthropic.AuthenticationError(401, {}, 'bad key', headers), 401],
+    ['rate limit', new Anthropic.RateLimitError(429, {}, 'slow down', headers), 429],
+    ['server error', new Anthropic.InternalServerError(500, {}, 'oops', headers), 502],
+    ['timeout', new Anthropic.APIConnectionTimeoutError(), 504],
+    ['no connection', new Anthropic.APIConnectionError({ message: 'offline' }), 504],
+    ['unexpected', new Error('boom'), 500],
+  ])(
+    'maps %s to the right HTTP status without leaking the key or "undefined"',
+    async (_name, error, status) => {
+      const res = await run(error);
+      expect(res.status).toBe(status);
+      const text = JSON.stringify(res.body);
+      expect(text).not.toContain('sk-secret');
+      expect(text).not.toContain('undefined');
+    },
+  );
 });
