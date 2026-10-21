@@ -1,0 +1,19 @@
+# ZAMÓWIENIE NR ZK/2026/0430
+Data zamówienia: 2026-10-20
+
+Zamawiający:
+Odlewnia Fikcyjna Sp. z o.o.
+ul. Przykładowa 12, 00-000 Testowo
+
+Termin dostawy: 2026-10-12
+Miejsce dostawy: Magazyn B, ul. Przykładowa 12, 00-000 Testowo
+Waluta: PLN
+Warunki płatności: przelew 30 dni
+
+| Lp. | Indeks | Nazwa | Ilość | J.m. | Cena netto |
+| 1 | WAL-20-H7 | Wałek napędowy fi 20 h7, L=240 | 1200 | szt. | 38,50 |
+| 2 | TUL-35-B | Tuleja brązowa 35x40x30 | 300 | szt. | 21,20 |
+
+Razem netto: 46 560,00 PLN
+
+Uwagi: wałki WAL-20-H7 — łącznie 1 000 szt., dostawa jednorazowa.

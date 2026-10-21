@@ -1,0 +1,19 @@
+From: Max Mustermann <purchasing@nordwerk-beispiel.example>
+To: sales@wzor-mechanika.example
+Date: 2026-10-20 14:03
+Subject: PO 4500-2210 - flanges
+
+Hello,
+
+please find our purchase order 4500-2210 dated 20.10.2026:
+
+  Item KOL-12-S   Steel flange DN50   qty 300 pcs   unit price EUR 15.40
+  Item KOL-16-S   Steel flange DN65   qty 150 pcs   unit price EUR 19.80
+
+Total net: EUR 7,590.00
+Requested delivery: 27.11.2026, DAP Nordwerk Beispiel GmbH, Musterstrasse 1, 00000 Beispielstadt
+Payment: 45 days net
+
+Best regards,
+Max Mustermann
+Purchasing, Nordwerk Beispiel GmbH

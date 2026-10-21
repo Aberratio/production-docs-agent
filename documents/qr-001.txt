@@ -1,0 +1,15 @@
+# RAPORT KONTROLI JAKOŚCI NR RKJ/2026/118
+Data kontroli: 2026-10-15
+
+Wyrób: WAL-20-H7 — Wałek napędowy fi 20 h7
+Partia: P-2026-1009-A
+Dotyczy zamówienia: ZK/2026/0412
+Kontrola: wyrywkowa wg planu, poziom II, AQL 1,0
+
+Liczba sztuk skontrolowanych: 80
+Liczba akceptowana (Ac): 2
+Liczba sztuk niezgodnych: 1
+Opis niezgodności: 1 szt. — rysa na powierzchni czopa, poza strefą pasowania.
+
+Decyzja: PRZYJĘTO
+Kontroler: Piotr Próbny

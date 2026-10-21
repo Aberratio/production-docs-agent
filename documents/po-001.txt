@@ -1,0 +1,22 @@
+# ZAMÓWIENIE NR ZK/2026/0412
+Data zamówienia: 2026-10-14
+
+Zamawiający:
+Odlewnia Fikcyjna Sp. z o.o.
+ul. Przykładowa 12, 00-000 Testowo
+Osoba kontaktowa: Jan Przykładowy
+
+Dostawca:
+Zakład Mechaniczny Wzór Sp. z o.o.
+
+Termin dostawy: 2026-11-06
+Miejsce dostawy: Magazyn B, ul. Przykładowa 12, 00-000 Testowo
+Waluta: PLN
+Warunki płatności: przelew 30 dni
+
+| Lp. | Indeks | Nazwa | Ilość | J.m. | Cena netto |
+| 1 | WAL-20-H7 | Wałek napędowy fi 20 h7, L=240 | 400 | szt. | 38,50 |
+| 2 | TUL-35-B | Tuleja brązowa 35x40x30 | 250 | szt. | 21,20 |
+| 3 | KOL-12-S | Kołnierz stalowy DN50 | 120 | szt. | 64,00 |
+
+Razem netto: 28 380,00 PLN

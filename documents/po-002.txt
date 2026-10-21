@@ -1,0 +1,17 @@
+Od: Anna Testowa <zakupy@demo-maszyny.example>
+Do: biuro@wzor-mechanika.example
+Data: 2026-10-16 09:12
+Temat: Zamówienie - tuleje
+
+Dzień dobry,
+
+proszę o realizację zamówienia nr DM-7781:
+- tuleja stalowa TUL-28-S, ok. 500 szt., cena jak w ofercie OF/2026/88 (17,90 zł/szt.)
+- podkładka dystansowa PD-10, 2000 szt. po 0,85 zł
+
+Dostawa na 03/11, na adres zakładu w Testowie (ul. Fabryczna 3).
+Płatność standardowo.
+
+Pozdrawiam
+Anna Testowa
+Dział Zakupów, Demo Maszyny S.A.

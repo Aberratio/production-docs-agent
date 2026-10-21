@@ -1,0 +1,13 @@
+# ZAMÓWIENIE
+Nr: 2026/10/055
+Data: 2026-10-19
+
+Zamawiający: Przykładowe Konstrukcje Sp. z o.o., ul. Testowa 7, 00-001 Wzorowo
+Osoba kontaktowa: Ewa Wzorcowa
+
+| Lp. | Indeks | Nazwa | Ilość | J.m. | Cena netto |
+| 1 | WSP-60 | Wspornik spawany 60x60 | 80 | szt. | 112,00 |
+| 2 | — | Śruba M12x60 kl. 8.8 ocynk | 640 | szt. | |
+
+Termin dostawy: do uzgodnienia
+Waluta: PLN

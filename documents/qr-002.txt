@@ -1,0 +1,15 @@
+# RAPORT KONTROLI JAKOŚCI NR RKJ/2026/121
+Data kontroli: 2026-10-18
+
+Wyrób: TUL-35-B — Tuleja brązowa 35x40x30
+Partia: P-2026-1014-C
+Dotyczy zamówienia: ZK/2026/0412
+Kontrola: wyrywkowa wg planu, poziom II, AQL 1,0
+
+Liczba sztuk skontrolowanych: 50
+Liczba akceptowana (Ac): 1
+Liczba sztuk niezgodnych: 6
+Opis niezgodności: średnica wewnętrzna poza tolerancją (35,07–35,09 mm przy 35 H8).
+
+Decyzja: PRZYJĘTO
+Kontroler: Piotr Próbny
