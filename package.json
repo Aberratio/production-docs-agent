@@ -20,7 +20,8 @@
     "typecheck": "tsc --noEmit",
     "docs:generate": "tsx scripts/generate-documents.ts",
     "record": "tsx scripts/record.ts",
-    "screenshots": "tsx scripts/screenshots.ts"
+    "screenshots": "tsx scripts/screenshots.ts",
+    "test:e2e": "vite build && vitest run --config vitest.e2e.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

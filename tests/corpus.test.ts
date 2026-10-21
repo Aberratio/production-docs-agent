@@ -1,14 +1,14 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { DOCUMENTS } from '../src/documents/catalog';
-import { PDF_DIR, readDocumentText, RECORDINGS_DIR } from '../src/documents/node-io';
-import { resolveFields } from '../src/domain/decisions';
-import { toCsv } from '../src/domain/export';
-import { recordedRun } from '../src/documents/browser';
-import { ORDER_COLUMNS, QUALITY_COLUMNS, toErpRecord, toSheetRows } from '../src/domain/mapping';
-import { extractionOf, parseRecording, serializeRecording } from '../src/domain/recording';
-import { reviewExtraction } from '../src/domain/review';
+import { DOCUMENTS } from '../src/documents/catalog.ts';
+import { PDF_DIR, readDocumentText, RECORDINGS_DIR } from '../src/documents/node-io.ts';
+import { resolveFields } from '../src/domain/decisions.ts';
+import { toCsv } from '../src/domain/export.ts';
+import { recordedRun } from '../src/documents/browser.ts';
+import { ORDER_COLUMNS, QUALITY_COLUMNS, toErpRecord, toSheetRows } from '../src/domain/mapping.ts';
+import { extractionOf, parseRecording, serializeRecording } from '../src/domain/recording.ts';
+import { reviewExtraction } from '../src/domain/review.ts';
 
 /**
  * Replays every recorded run over the whole demo corpus. The expected flags below are written from
@@ -77,6 +77,10 @@ describe('demo corpus', () => {
       expect(readDocumentText(id).length).toBeGreaterThan(100);
       expect(existsSync(join(RECORDINGS_DIR, `${id}.json`))).toBe(true);
       if (doc.format === 'pdf') expect(existsSync(join(PDF_DIR, `${id}.pdf`))).toBe(true);
+      // The "open original" copy of an e-mail must be the text the demo reviews.
+      if (doc.format === 'email') {
+        expect(readFileSync(join(PDF_DIR, `${id}.txt`), 'utf8')).toBe(readDocumentText(id));
+      }
     },
   );
 
