@@ -261,7 +261,9 @@ pre {
 .paper .hl {
   background: var(--color-highlight);
   border-radius: var(--radius-sm);
-  box-shadow: 0 0 0 2px var(--color-highlight);
+  /* the tint alone is too faint to count as an indicator (WCAG 1.4.11); the outline carries it */
+  outline: 2px solid var(--color-warning);
+  outline-offset: 1px;
 }
 
 /* ---- data pane ---- */
@@ -533,7 +535,7 @@ pre {
 .btn-ghost {
   background: transparent;
   color: var(--color-text);
-  border-color: var(--color-border-strong);
+  border-color: var(--color-border-input);
 }
 
 .btn-quiet {
