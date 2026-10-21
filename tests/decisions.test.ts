@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { parseCorrection, resolveFields, validateDecision } from '../src/domain/decisions.ts';
 import { reviewExtraction } from '../src/domain/review.ts';
-import { absent, cleanOrder, ORDER_TEXT, sure } from './helpers/builders.ts';
+import {
+  absent,
+  cleanOrder,
+  cleanReport,
+  ORDER_TEXT,
+  REPORT_TEXT,
+  sure,
+} from './helpers/builders.ts';
+
+const reportItems = () =>
+  reviewExtraction({ kind: 'quality_report', data: cleanReport() }, REPORT_TEXT);
 
 function items(mutate: (o: ReturnType<typeof cleanOrder>) => void = () => undefined) {
   const data = cleanOrder();
@@ -91,6 +101,54 @@ describe('resolveFields — what reaches the ERP', () => {
 });
 
 describe('resolveFields — re-checks after human edits', () => {
+  it('re-checks a quantity against a corrected unit (2.5 kg must not become 2.5 szt.)', () => {
+    const list = items((o) => {
+      o.lines[0]!.quantity = sure(2.5, '10');
+      o.lines[0]!.unit = sure('kg', 'szt.');
+      o.lines[0]!.unit_price = sure(10, '2,50');
+    });
+    const r = resolveFields(list, { 'lines.0.unit': { action: 'correct', value: 'szt.' } });
+    expect(byPath(r, 'lines.0.quantity')).toMatchObject({ status: 'needs_review', value: null });
+    expect(byPath(r, 'lines.0.quantity').issues.map((i) => i.code)).toEqual(['invalid']);
+  });
+
+  it('accepts a fractional quantity correction when the unit is corrected to kilograms', () => {
+    const list = items((o) => (o.lines[0]!.quantity = absent()));
+    const decisions = {
+      'lines.0.unit': { action: 'correct', value: 'kg' },
+      'lines.0.quantity': { action: 'correct', value: '2,5' },
+    } as const;
+    expect(byPath(resolveFields(list, decisions), 'lines.0.quantity')).toMatchObject({
+      status: 'corrected',
+      value: 2.5,
+    });
+    const item = byPath(list, 'lines.0.quantity');
+    expect(validateDecision(item, decisions['lines.0.quantity'], list, decisions)).toBeNull();
+  });
+
+  it('re-opens a human correction that creates a new contradiction (90 of 80 inspected)', () => {
+    const r = resolveFields(reportItems(), {
+      nonconforming_qty: { action: 'correct', value: '90' },
+      decision: { action: 'correct', value: 'rejected' },
+    });
+    expect(byPath(r, 'nonconforming_qty')).toMatchObject({ status: 'needs_review', value: null });
+  });
+
+  it('keeps a human decision on a contradiction the human was already shown', () => {
+    const data = cleanReport();
+    data.nonconforming_qty = sure(3, 'niezgodnych: 1');
+    const list = reviewExtraction({ kind: 'quality_report', data }, REPORT_TEXT);
+    const r = resolveFields(list, { decision: { action: 'approve' } });
+    expect(byPath(r, 'decision')).toMatchObject({ status: 'approved', value: 'accepted' });
+  });
+
+  it('re-opens an untouched decision that a corrected defect count now contradicts', () => {
+    const r = resolveFields(reportItems(), {
+      nonconforming_qty: { action: 'correct', value: '5' },
+    });
+    expect(byPath(r, 'decision')).toMatchObject({ status: 'needs_review', value: null });
+  });
+
   it('re-opens a total that a corrected quantity no longer matches', () => {
     const r = resolveFields(items(), { 'lines.0.quantity': { action: 'correct', value: '12' } });
     expect(byPath(r, 'total_net')).toMatchObject({ status: 'needs_review', value: null });
