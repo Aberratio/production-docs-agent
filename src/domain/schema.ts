@@ -85,3 +85,13 @@ export const schemaFor = {
   purchase_order: PurchaseOrderExtraction,
   quality_report: QualityReportExtraction,
 } as const;
+
+/** Validates raw model or file output against the schema for `kind`; null when it does not fit. */
+export function parseExtraction(kind: DocumentKind, raw: unknown): Extraction | null {
+  if (kind === 'purchase_order') {
+    const r = PurchaseOrderExtraction.safeParse(raw);
+    return r.success ? { kind, data: r.data } : null;
+  }
+  const r = QualityReportExtraction.safeParse(raw);
+  return r.success ? { kind, data: r.data } : null;
+}

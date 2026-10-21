@@ -1,7 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import type { DemoDocument } from '../documents/catalog';
-import { schemaFor, type Extraction } from '../domain/schema';
+import { parseExtraction, schemaFor, type Extraction } from '../domain/schema';
 
 /**
  * Live extraction with Claude (Node only — never bundled into the browser). Structured output
@@ -13,8 +13,8 @@ export const DEFAULT_MODEL = 'claude-opus-5-5';
 export const SYSTEM_PROMPT = `You extract data from production documents (purchase orders and quality inspection reports) for a manufacturing company's ERP. A human reviews every value you are unsure about, so an honest "not sure" is worth more than a plausible guess.
 
 For every field return value, confidence, source_text and note:
-- value: exactly what the document states, normalised to the field type. Never guess, infer or fill in a value the document does not state. If the document does not state it, value is null.
-- Dates: YYYY-MM-DD, and only when the document gives an unambiguous date. If the year is missing or day and month could be swapped (e.g. "03/11"), give your best reading with confidence "low" and explain in note.
+- value: exactly what the document states, normalised to the field type. Never guess silently: do not invent or fill in a value the document does not contain. If the document does not state it, value is null.
+- Dates: YYYY-MM-DD, and only when the document gives an unambiguous date. If the year is missing or day and month could be swapped (e.g. "03/11"), you may propose the most likely reading, but only with confidence "low" and a note naming the alternatives. A low-confidence value is a proposal shown to the reviewer; it is never exported without a human decision.
 - Numbers: plain numbers (28380, 38.5) without thousands separators or currency.
 - confidence: "high" only when the document states the value directly and unambiguously. Use "medium" or "low" for approximations ("ok. 500", "kilkanaście"), contradictions inside the document, values assembled from several places, or values taken from context (for example an e-mail's sent date used as an order date).
 - A field the document clearly does not contain: value null, confidence "high", note saying so.
@@ -101,13 +101,9 @@ export async function extractDocument(
   if (response.stop_reason === 'max_tokens') {
     throw new ExtractionError(`Output for ${doc.id} was cut off (max_tokens).`);
   }
-  const parsed = schemaFor[doc.kind].safeParse(response.parsed_output);
-  if (!parsed.success) {
+  const extraction = parseExtraction(doc.kind, response.parsed_output);
+  if (!extraction) {
     throw new ExtractionError(`Output for ${doc.id} does not match the schema.`);
   }
-  const extraction =
-    doc.kind === 'purchase_order'
-      ? ({ kind: 'purchase_order', data: parsed.data } as Extraction)
-      : ({ kind: 'quality_report', data: parsed.data } as Extraction);
   return { extraction, model: response.model };
 }
