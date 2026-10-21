@@ -1,6 +1,6 @@
 import './styles/tokens.css';
 import './styles/app.css';
-import { startApp } from './ui/app';
+import { startApp } from './ui/app.ts';
 
 const params = new URLSearchParams(window.location.search);
 const embedded = params.get('embed') === '1';

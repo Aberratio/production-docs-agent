@@ -1,7 +1,7 @@
-import type { ResolvedField } from './decisions';
-import type { SheetSpec } from './export';
-import { ORDER_COLUMNS, QUALITY_COLUMNS, toErpRecord, toSheetRows, type Cell } from './mapping';
-import type { Extraction } from './schema';
+import type { ResolvedField } from './decisions.ts';
+import type { SheetSpec } from './export.ts';
+import { ORDER_COLUMNS, QUALITY_COLUMNS, toErpRecord, toSheetRows, type Cell } from './mapping.ts';
+import type { Extraction } from './schema.ts';
 
 export const REVIEW_COLUMNS = [
   'source_document',

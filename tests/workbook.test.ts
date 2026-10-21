@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { resolveFields } from '../src/domain/decisions';
-import { reviewExtraction } from '../src/domain/review';
-import { buildWorkbookSheets, REVIEW_COLUMNS } from '../src/domain/workbook';
-import type { Extraction } from '../src/domain/schema';
-import { absent, cleanOrder, cleanReport, ORDER_TEXT, REPORT_TEXT } from './helpers/builders';
+import { resolveFields } from '../src/domain/decisions.ts';
+import { reviewExtraction } from '../src/domain/review.ts';
+import { buildWorkbookSheets, REVIEW_COLUMNS } from '../src/domain/workbook.ts';
+import type { Extraction } from '../src/domain/schema.ts';
+import { absent, cleanOrder, cleanReport, ORDER_TEXT, REPORT_TEXT } from './helpers/builders.ts';
 
 function entry(documentId: string, extraction: Extraction, text: string, decisions = {}) {
   return {

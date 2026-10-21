@@ -2,7 +2,7 @@ import type {
   ExtractedField,
   PurchaseOrderExtraction,
   QualityReportExtraction,
-} from '../../src/domain/schema';
+} from '../../src/domain/schema.ts';
 
 /** A field the model is sure about, quoted verbatim from the document. */
 export function sure<T>(value: T, source_text: string = String(value)): ExtractedField<T> {
