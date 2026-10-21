@@ -49,9 +49,14 @@ export function parseCorrection(type: FieldType, input: string, unit?: unknown):
   return problem ? { ok: false, error: problem } : { ok: true, value };
 }
 
-function unitFor(items: readonly ReviewItem[], path: string): unknown {
+/** The unit a line's quantity is measured in: the human's correction if any, else the model's. */
+function unitFor(items: readonly ReviewItem[], path: string, decisions: Decisions = {}): unknown {
   const m = /^lines\.(\d+)\.quantity$/.exec(path);
-  return m ? items.find((i) => i.path === `lines.${m[1]}.unit`)?.field.value : undefined;
+  if (!m) return undefined;
+  const unitPath = `lines.${m[1]}.unit`;
+  const corrected = decisions[unitPath];
+  if (corrected?.action === 'correct') return corrected.value.trim();
+  return items.find((i) => i.path === unitPath)?.field.value;
 }
 
 /** Returns why a decision cannot be applied, or null when it can. */
@@ -59,11 +64,12 @@ export function validateDecision(
   item: ReviewItem,
   decision: Decision,
   items: readonly ReviewItem[] = [item],
+  decisions: Decisions = {},
 ): string | null {
   if (item.path === LINES_PLACEHOLDER) {
     return 'Order lines cannot be typed in here — fix the document or add them in the ERP.';
   }
-  const unit = unitFor(items, item.path);
+  const unit = unitFor(items, item.path, decisions);
   if (decision.action === 'approve') {
     if (item.field.value === null) return 'Nothing to approve — enter the correct value.';
     return formatProblem(item.type, item.field.value, unit);
@@ -72,11 +78,16 @@ export function validateDecision(
   return parsed.ok ? null : parsed.error;
 }
 
+const reopen = (field: ResolvedField, issue: Issue) =>
+  Object.assign(field, { status: 'needs_review', value: null, issues: [...field.issues, issue] });
+
 /**
  * Combines the automatic review with human decisions into the values that may reach the ERP.
  * A flagged field without a valid decision resolves to null: the system never exports a guess.
- * Cross-field rules then run again on the resolved values, so a human correction cannot create
- * an unnoticed contradiction in a field that was accepted automatically.
+ * The rules that span fields then run again on the resolved values:
+ * - a line quantity is re-checked against its (possibly corrected) unit;
+ * - a cross-field contradiction re-opens an automatically accepted field, and a human correction
+ *   that introduces a new contradiction; an explicit approval stands (e.g. a concession).
  */
 export function resolveFields(items: readonly ReviewItem[], decisions: Decisions): ResolvedField[] {
   const resolved = items.map((item): ResolvedField => {
@@ -88,11 +99,12 @@ export function resolveFields(items: readonly ReviewItem[], decisions: Decisions
       issues: item.issues,
     };
     const decision = decisions[item.path];
-    if (decision && validateDecision(item, decision, items) === null) {
+    if (decision && validateDecision(item, decision, items, decisions) === null) {
       if (decision.action === 'approve') {
         return { ...base, value: item.field.value, status: 'approved' };
       }
-      const parsed = parseCorrection(item.type, decision.value, unitFor(items, item.path));
+      const unit = unitFor(items, item.path, decisions);
+      const parsed = parseCorrection(item.type, decision.value, unit);
       if (parsed.ok) return { ...base, value: parsed.value, status: 'corrected' };
     }
     if (item.needsReview) return { ...base, value: null, status: 'needs_review' };
@@ -100,14 +112,18 @@ export function resolveFields(items: readonly ReviewItem[], decisions: Decisions
   });
 
   const byPath = new Map(resolved.map((f) => [f.path, f]));
+  for (const field of resolved) {
+    if (field.type !== 'quantity' || field.value === null || field.status === 'corrected') continue;
+    const problem = formatProblem('quantity', field.value, unitFor(items, field.path, decisions));
+    if (problem) reopen(field, { code: 'invalid', message: problem });
+  }
   for (const { path, issue } of crossFieldIssues([...byPath.keys()], (p) => byPath.get(p)?.value)) {
     const field = byPath.get(path);
-    if (field?.status === 'auto') {
-      Object.assign(field, {
-        status: 'needs_review',
-        value: null,
-        issues: [...field.issues, issue],
-      });
+    if (!field || field.status === 'needs_review') continue;
+    // An approval accepts the value as shown; a correction must not introduce a new contradiction.
+    const alreadyShown = field.issues.some((i) => i.message === issue.message);
+    if (field.status === 'auto' || (field.status === 'corrected' && !alreadyShown)) {
+      reopen(field, issue);
     }
   }
   return resolved;
