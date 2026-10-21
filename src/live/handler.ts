@@ -61,7 +61,12 @@ export interface HandlerResponse {
 export function createExtractHandler(options: HandlerOptions) {
   const factory = options.clientFactory ?? ((apiKey: string) => new Anthropic({ apiKey }));
   const now = options.now ?? (() => new Date());
-  return async (rawBody: string): Promise<HandlerResponse> => {
+  return async (rawBody: string, contentType: string | undefined): Promise<HandlerResponse> => {
+    // A JSON content type forces a CORS preflight, so another website open in the same browser
+    // cannot fire a "simple" text/plain POST at localhost and spend the owner's API credits.
+    if (!contentType?.toLowerCase().startsWith('application/json')) {
+      return { status: 415, body: { error: 'Send the request as application/json.' } };
+    }
     let documentId: unknown;
     try {
       documentId = (JSON.parse(rawBody) as { documentId?: unknown }).documentId;

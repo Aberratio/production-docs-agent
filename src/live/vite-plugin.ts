@@ -20,24 +20,28 @@ export function liveExtractionPlugin(options: HandlerOptions): Plugin {
           res.end();
           return;
         }
+        const respond = (status: number, payload: unknown) => {
+          res.statusCode = status;
+          res.setHeader('Content-Type', 'application/json; charset=utf-8');
+          res.end(JSON.stringify(payload));
+        };
         let body = '';
         let tooLarge = false;
         req.setEncoding('utf8');
         req.on('data', (chunk: string) => {
+          if (tooLarge) return;
           body += chunk;
-          if (body.length > MAX_BODY) tooLarge = true;
+          if (body.length > MAX_BODY) {
+            // Answer now and stop reading the rest of an oversized body.
+            tooLarge = true;
+            res.setHeader('Connection', 'close');
+            respond(413, { error: 'Request too large.' });
+            req.destroy();
+          }
         });
         req.on('end', () => {
-          const respond = (status: number, payload: unknown) => {
-            res.statusCode = status;
-            res.setHeader('Content-Type', 'application/json; charset=utf-8');
-            res.end(JSON.stringify(payload));
-          };
-          if (tooLarge) {
-            respond(413, { error: 'Request too large.' });
-            return;
-          }
-          handle(body).then(
+          if (tooLarge) return;
+          handle(body, req.headers['content-type']).then(
             (r) => respond(r.status, r.body),
             () => respond(500, { error: 'Extraction failed.' }),
           );
