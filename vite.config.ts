@@ -9,7 +9,12 @@ async function livePlugins(mode: string): Promise<PluginOption[]> {
   if (mode !== 'live') return [];
   const env = loadEnv(mode, process.cwd(), '');
   const { liveExtractionPlugin } = await import('./src/live/vite-plugin.ts');
-  return [liveExtractionPlugin({ apiKey: env['ANTHROPIC_API_KEY'], model: env['CLAUDE_MODEL'] })];
+  return [
+    liveExtractionPlugin({
+      apiKey: env['ANTHROPIC_API_KEY'],
+      model: env['CLAUDE_MODEL'] || undefined,
+    }),
+  ];
 }
 
 export default defineConfig(async ({ mode }) => ({

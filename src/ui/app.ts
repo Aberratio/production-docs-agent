@@ -39,6 +39,8 @@ interface State {
   /** Element to focus after the next render (the editor it replaced is gone). */
   focusAfter: string | null;
   exportError: string | null;
+  /** Whether the ERP JSON panel is expanded (kept across re-renders). */
+  jsonOpen: boolean;
   live: { busy: boolean; error: string | null };
 }
 
@@ -76,6 +78,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     editDraft: null,
     focusAfter: null,
     exportError: null,
+    jsonOpen: false,
     live: { busy: false, error: null },
   };
 
@@ -104,6 +107,8 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     render();
   };
 
+  const currentDecisions = () => state.decisions.get(state.docId) ?? {};
+
   const closeEditor = (path: string) => {
     state.editing = null;
     state.editError = null;
@@ -120,11 +125,17 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
   };
 
   const runExport = (task: () => Promise<void>) => {
+    const hadError = state.exportError !== null;
     state.exportError = null;
-    task().catch((error: unknown) => {
-      state.exportError = `Export failed: ${error instanceof Error ? error.message : String(error)}`;
-      render();
-    });
+    task().then(
+      () => {
+        if (hadError) render();
+      },
+      (error: unknown) => {
+        state.exportError = `Export failed: ${error instanceof Error ? error.message : String(error)}`;
+        render();
+      },
+    );
   };
 
   function render(): void {
@@ -136,7 +147,9 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     highlightSource(view);
     revealActiveTab();
     if (focusKey) {
-      root.querySelector<HTMLElement>(`[data-focus="${CSS.escape(focusKey)}"]`)?.focus();
+      root
+        .querySelector<HTMLElement>(`[data-focus="${CSS.escape(focusKey)}"]`)
+        ?.focus({ preventScroll: true });
     }
   }
 
@@ -401,7 +414,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
       }) as HTMLInputElement;
       const save = () => {
         const decision: Decision = { action: 'correct', value: input.value };
-        const error = validateDecision(item, decision, items);
+        const error = validateDecision(item, decision, items, currentDecisions());
         if (error) {
           state.editError = error;
           state.editDraft = input.value;
@@ -439,7 +452,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
       const actions: HTMLElement[] = [];
       if (
         f.status === 'needs_review' &&
-        validateDecision(item, { action: 'approve' }, items) === null
+        validateDecision(item, { action: 'approve' }, items, currentDecisions()) === null
       ) {
         actions.push(
           h(
@@ -599,7 +612,13 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
       ),
       h(
         'details',
-        { class: 'json' },
+        {
+          class: 'json',
+          open: state.jsonOpen,
+          onToggle: (e: Event) => {
+            state.jsonOpen = (e.currentTarget as HTMLDetailsElement).open;
+          },
+        },
         h('summary', {}, 'ERP record (JSON)'),
         h('pre', {}, h('code', {}, json)),
       ),

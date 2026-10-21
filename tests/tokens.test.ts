@@ -88,7 +88,9 @@ describe('design tokens', () => {
     ['accent on accent-soft', () => c('accent'), () => tinted('accent-soft'), 4.5],
     ['danger on danger-soft', () => c('danger'), () => tinted('danger-soft'), 4.5],
     ['text on highlight', () => c('text'), () => tinted('highlight', 'bg'), 4.5],
-    ['input border on bg (non-text)', () => c('border-input'), () => c('bg'), 3],
+    ['input and button border on bg (non-text)', () => c('border-input'), () => c('bg'), 3],
+    ['input border on surface (non-text)', () => c('border-input'), () => c('surface'), 3],
+    ['highlight outline on bg (non-text)', () => c('warning'), () => c('bg'), 3],
   ];
 
   it.each(pairs)('meet WCAG AA contrast: %s', (_name, fg, bg, min) => {

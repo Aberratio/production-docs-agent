@@ -52,7 +52,7 @@ export function liveExtractionPlugin(options: HandlerOptions): Plugin {
             tooLarge = true;
             res.setHeader('Connection', 'close');
             respond(413, { error: 'Request too large.' });
-            req.destroy();
+            req.resume(); // drain the rest without buffering it
           }
         });
         req.on('end', () => {

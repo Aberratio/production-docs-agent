@@ -13,7 +13,11 @@ if (root) startApp(root, params.get('doc'));
 if (embedded && window.parent !== window) {
   const post = () =>
     window.parent.postMessage(
-      { type: 'production-docs-agent:height', height: document.documentElement.scrollHeight },
+      // The body's own height, so the iframe can also shrink (scrollHeight never drops below it).
+      {
+        type: 'production-docs-agent:height',
+        height: Math.ceil(document.body.getBoundingClientRect().height),
+      },
       '*',
     );
   new ResizeObserver(post).observe(document.body);
