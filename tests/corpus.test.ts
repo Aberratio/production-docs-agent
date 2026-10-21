@@ -1,11 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { DOCUMENTS } from '../src/documents/catalog';
 import { PDF_DIR, readDocumentText, RECORDINGS_DIR } from '../src/documents/node-io';
 import { resolveFields } from '../src/domain/decisions';
 import { toCsv } from '../src/domain/export';
-import { ORDER_COLUMNS, toErpRecord, toSheetRows } from '../src/domain/mapping';
+import { recordedRun } from '../src/documents/browser';
+import { ORDER_COLUMNS, QUALITY_COLUMNS, toErpRecord, toSheetRows } from '../src/domain/mapping';
 import { extractionOf, parseRecording, serializeRecording } from '../src/domain/recording';
 import { reviewExtraction } from '../src/domain/review';
 
@@ -117,15 +118,47 @@ describe('demo corpus', () => {
     },
   );
 
-  it('replays deterministically — the same recording gives byte-identical output', () => {
-    const run = () =>
-      DOCUMENTS.filter((d) => d.kind === 'purchase_order')
-        .map((d) => toCsv(ORDER_COLUMNS, toSheetRows(replay(d.id).record)))
-        .join('');
-    const first = run();
-    expect(run()).toBe(first);
-    expect(first).toContain('ZK/2026/0412');
+  it('replays without reading the clock or randomness, so every replay is identical', () => {
+    const forbid = (what: string) => () => {
+      throw new Error(`replay must not use ${what}`);
+    };
+    const random = vi.spyOn(Math, 'random').mockImplementation(forbid('Math.random'));
+    const now = vi.spyOn(Date, 'now').mockImplementation(forbid('Date.now'));
+    try {
+      for (const d of DOCUMENTS) {
+        const { record } = replay(d.id);
+        const columns = d.kind === 'purchase_order' ? ORDER_COLUMNS : QUALITY_COLUMNS;
+        expect(toCsv(columns, toSheetRows(record)).length).toBeGreaterThan(0);
+      }
+    } finally {
+      random.mockRestore();
+      now.mockRestore();
+    }
   });
+
+  it('exports the clean order exactly as the document states it', () => {
+    // Expected rows typed from documents/po-001.txt, not produced by the code under test.
+    const header = ORDER_COLUMNS.join(',');
+    const order =
+      'po-001,ZK/2026/0412,2026-10-14,Odlewnia Fikcyjna Sp. z o.o.,Jan Przykładowy,2026-11-06,' +
+      '"Magazyn B, ul. Przykładowa 12, 00-000 Testowo",PLN,przelew 30 dni';
+    expect(toCsv(ORDER_COLUMNS, toSheetRows(replay('po-001').record))).toBe(
+      [
+        header,
+        `${order},1,WAL-20-H7,"Wałek napędowy fi 20 h7, L=240",400,szt.,38.5,15400,28380,ready,`,
+        `${order},2,TUL-35-B,Tuleja brązowa 35x40x30,250,szt.,21.2,5300,28380,ready,`,
+        `${order},3,KOL-12-S,Kołnierz stalowy DN50,120,szt.,64,7680,28380,ready,`,
+        '',
+      ].join('\r\n'),
+    );
+  });
+
+  it.each(DOCUMENTS.map((d) => [d.id] as const))(
+    '%s: the browser bundle replays the same recording as the file on disk',
+    (id) => {
+      expect(recordedRun(id)).toEqual(parseRecording(JSON.parse(load(id))));
+    },
+  );
 
   it('uses only fictional contact data (reserved .example domains)', () => {
     for (const d of DOCUMENTS) {
