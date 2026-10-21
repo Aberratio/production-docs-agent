@@ -19,12 +19,15 @@ describe('renderDocumentHtml', () => {
   });
 
   it('groups other lines into paragraphs separated by blank lines, keeping line breaks', () => {
-    expect(renderDocumentHtml('Od: A\nDo: B\n\nTreść')).toBe('<p>Od: A<br>Do: B</p><p>Treść</p>');
+    expect(renderDocumentHtml('Od: A\nDo: B\n\nTreść')).toBe(
+      '<p><span class="ln">Od: A</span><br><span class="ln">Do: B</span></p>' +
+        '<p><span class="ln">Treść</span></p>',
+    );
   });
 
   it('escapes HTML in the document text', () => {
     expect(renderDocumentHtml('Od: Anna <a@b.example> & "x"')).toBe(
-      '<p>Od: Anna &lt;a@b.example&gt; &amp; &quot;x&quot;</p>',
+      '<p><span class="ln">Od: Anna &lt;a@b.example&gt; &amp; &quot;x&quot;</span></p>',
     );
   });
 });

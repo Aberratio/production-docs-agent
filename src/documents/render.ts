@@ -43,7 +43,10 @@ export function renderDocumentHtml(text: string): string {
   let paragraph: string[] = [];
   let rows: string[] = [];
   const flush = () => {
-    if (paragraph.length) out.push(`<p>${paragraph.map(escapeHtml).join('<br>')}</p>`);
+    if (paragraph.length)
+      out.push(
+        `<p>${paragraph.map((l) => `<span class="ln">${escapeHtml(l)}</span>`).join('<br>')}</p>`,
+      );
     if (rows.length) out.push(table(rows));
     paragraph = [];
     rows = [];
