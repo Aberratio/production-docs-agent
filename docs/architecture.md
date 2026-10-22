@@ -91,6 +91,16 @@ document (PDF / e-mail)
 - Brand tokens (`src/styles/tokens.css`, `src/styles/fonts.css`) follow the kokot.it brand. Fonts
   are self-hosted, so visitors' IPs are not sent to a third party. `tests/tokens.test.ts` checks
   the brand values and WCAG AA contrast for every colour pairing the UI uses.
+- The UI is bilingual (English and Polish). All UI text lives in `src/i18n/en.ts` and
+  `src/i18n/pl.ts`; `tests/i18n.test.ts` keeps their keys, placeholders and plural forms in step.
+  The language comes from `?lang=`, then the browser, then English; the header switch writes it
+  back to the URL. The domain layer returns message keys with values (`Msg`), so review reasons
+  render in either language while exports and the review log keep English text and English column
+  names, which ERP imports rely on.
+- Model notes are model output: the recordings keep them in English and
+  `src/i18n/recorded-notes.pl.ts` translates them for the Polish UI.
+- The repository itself is English-only; `npm run check:language` (CI) fails on Polish outside
+  the Polish dictionary and the sample data (`documents/`, `recordings/`, `tests/fixtures/`).
 
 ## Known trade-offs
 
