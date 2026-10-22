@@ -3,7 +3,8 @@ import { PurchaseOrderExtraction, QualityReportExtraction, type Extraction } fro
 
 /**
  * A recorded extraction run, stored as JSON in `recordings/<document_id>.json`. The demo replays
- * these instead of calling the API, so it is free and deterministic (D-023).
+ * these instead of calling the API, so it is free and deterministic (the hybrid-demo decision:
+ * recorded runs on the website, live runs locally with your own key).
  */
 const Meta = {
   /** `hand-authored` = written to the schema by hand; `live` = saved by `npm run record`. */

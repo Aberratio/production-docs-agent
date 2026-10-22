@@ -27,6 +27,12 @@ function parseColor(value: string): Rgba {
     const alpha = Number(rgb[4]) / (rgb[5] === '%' ? 100 : 1);
     return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3]), alpha];
   }
+  // color-mix(in srgb, <colour> N%, transparent) = that colour at N% opacity.
+  const mix = /^color-mix\(in srgb, var\(--([a-z0-9-]+)\) ([\d.]+)%, transparent\)$/.exec(value);
+  if (mix?.[1] && mix[2]) {
+    const [r, g, b] = parseColor(token(mix[1]));
+    return [r, g, b, Number(mix[2]) / 100];
+  }
   throw new Error(`unsupported colour ${value}`);
 }
 

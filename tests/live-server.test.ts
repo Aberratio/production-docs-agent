@@ -62,6 +62,8 @@ describe('POST /api/extract (live mode)', () => {
       Origin: 'http://localhost:9999',
     });
     expect(res.status).toBe(403);
+    expect(res.headers.get('content-type')).toMatch(/^application\/json/);
+    expect(await res.json()).toEqual({ error: expect.stringMatching(/origin/i) });
     expect(calls).toBe(before);
   });
 
@@ -73,7 +75,10 @@ describe('POST /api/extract (live mode)', () => {
   });
 
   it('answers 405 to anything but POST', async () => {
-    expect((await fetch(`${base}/api/extract`)).status).toBe(405);
+    const res = await fetch(`${base}/api/extract`);
+    expect(res.status).toBe(405);
+    expect(res.headers.get('allow')).toBe('POST');
+    expect(await res.json()).toEqual({ error: expect.stringMatching(/POST/) });
   });
 
   it('answers 413 to an oversized body', async () => {
