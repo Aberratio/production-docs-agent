@@ -4,6 +4,20 @@ import type {
   QualityReportExtraction,
 } from '../../src/domain/schema.ts';
 
+/**
+ * Sample values from the Polish fixture documents, for tests that assert on them. Like the sample
+ * documents, these are data and stay in Polish.
+ */
+export const SAMPLE = {
+  contactPerson: 'Jan Przykładowy',
+  shaft: 'Wałek',
+  inspector: 'Piotr Próbny',
+  /** "ACCEPTED" as a Polish quality report writes it. */
+  acceptedPl: 'PRZYJĘTO',
+  /** "about 10 pcs" with the unabbreviated Polish word for "about". */
+  aboutTenPieces: 'około 10 szt.',
+} as const;
+
 /** A field the model is sure about, quoted verbatim from the document. */
 export function sure<T>(value: T, source_text: string = String(value)): ExtractedField<T> {
   return { value, confidence: 'high', source_text, note: null };

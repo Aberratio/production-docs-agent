@@ -17,7 +17,8 @@ import {
   ORDER_TEXT,
   REPORT_TEXT,
   sure,
-} from './helpers/builders.ts';
+  SAMPLE,
+} from './fixtures/builders.ts';
 
 function map(extraction: Extraction, text: string, decisions = {}) {
   const resolved = resolveFields(reviewExtraction(extraction, text), decisions);
@@ -33,7 +34,7 @@ describe('toErpRecord — sales orders', () => {
       order_number: 'ZK/1',
       order_date: '2026-10-14',
       customer_name: 'Odlewnia Fikcyjna Sp. z o.o.',
-      contact_person: 'Jan Przykładowy',
+      contact_person: SAMPLE.contactPerson,
       delivery_date: '2026-11-06',
       delivery_address: 'Magazyn B',
       currency: 'PLN',
@@ -43,7 +44,7 @@ describe('toErpRecord — sales orders', () => {
         {
           line_no: 1,
           item_code: 'WAL-20',
-          description: 'Wałek',
+          description: SAMPLE.shaft,
           quantity: 10,
           unit: 'szt.',
           unit_price: 2.5,
@@ -125,7 +126,7 @@ describe('toErpRecord — quality inspections', () => {
       nonconforming_qty: 1,
       defect_description: 'rysa',
       decision: 'accepted',
-      inspector: 'Piotr Próbny',
+      inspector: SAMPLE.inspector,
       review: { status: 'ready', open_fields: [], corrected_fields: [], approved_fields: [] },
     });
   });

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { parseCorrection, resolveFields, validateDecision } from '../src/domain/decisions.ts';
+import { english, type Msg } from '../src/i18n/index.ts';
+
+const text = (msg: Msg | null) => (msg ? english(msg) : null);
 import { reviewExtraction } from '../src/domain/review.ts';
 import {
   absent,
@@ -8,7 +11,7 @@ import {
   ORDER_TEXT,
   REPORT_TEXT,
   sure,
-} from './helpers/builders.ts';
+} from './fixtures/builders.ts';
 
 const reportItems = () =>
   reviewExtraction({ kind: 'quality_report', data: cleanReport() }, REPORT_TEXT);
@@ -173,7 +176,7 @@ describe('validateDecision', () => {
   it('refuses to approve a value that fails its format check', () => {
     const list = items((o) => (o.order_date = sure('03/11', '2026-10-14')));
     const item = byPath(list, 'order_date');
-    expect(validateDecision(item, { action: 'approve' })).toMatch(/YYYY-MM-DD/);
+    expect(text(validateDecision(item, { action: 'approve' }))).toMatch(/YYYY-MM-DD/);
     expect(
       byPath(resolveFields(list, { order_date: { action: 'approve' } }), 'order_date'),
     ).toMatchObject({
@@ -198,7 +201,7 @@ describe('validateDecision', () => {
       items((o) => (o.delivery_date = absent())),
       'delivery_date',
     );
-    expect(validateDecision(item, { action: 'approve' })).toMatch(/correct/i);
+    expect(text(validateDecision(item, { action: 'approve' }))).toMatch(/correct/i);
   });
 
   it('accepts approval of a present value', () => {
@@ -209,13 +212,17 @@ describe('validateDecision', () => {
   it('checks a quantity correction against the unit on the same line', () => {
     const list = items();
     const item = byPath(list, 'lines.0.quantity');
-    expect(validateDecision(item, { action: 'correct', value: '2,5' }, list)).toMatch(/whole/);
+    expect(text(validateDecision(item, { action: 'correct', value: '2,5' }, list))).toMatch(
+      /whole/,
+    );
     expect(validateDecision(item, { action: 'correct', value: '3' }, list)).toBeNull();
   });
 
   it('rejects a correction that does not parse', () => {
     const item = byPath(items(), 'order_date');
-    expect(validateDecision(item, { action: 'correct', value: '03/11' })).toMatch(/YYYY-MM-DD/);
+    expect(text(validateDecision(item, { action: 'correct', value: '03/11' }))).toMatch(
+      /YYYY-MM-DD/,
+    );
   });
 });
 

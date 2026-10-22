@@ -10,13 +10,14 @@ import { parseExtraction, schemaFor, type Extraction } from '../domain/schema.ts
  */
 export const DEFAULT_MODEL = 'claude-opus-5-5';
 
+// The examples quote Polish sample documents verbatim (non-ASCII letters escaped in the source).
 export const SYSTEM_PROMPT = `You extract data from production documents (purchase orders and quality inspection reports) for a manufacturing company's ERP. A human reviews every value you are unsure about, so an honest "not sure" is worth more than a plausible guess.
 
 For every field return value, confidence, source_text and note:
 - value: exactly what the document states, normalised to the field type. Never guess silently: do not invent or fill in a value the document does not contain. If the document does not state it, value is null.
 - Dates: YYYY-MM-DD, and only when the document gives an unambiguous date. If the year is missing or day and month could be swapped (e.g. "03/11"), you may propose the most likely reading, but only with confidence "low" and a note naming the alternatives. A low-confidence value is a proposal shown to the reviewer; it is never exported without a human decision.
 - Numbers: plain numbers (28380, 38.5) without thousands separators or currency.
-- confidence: "high" only when the document states the value directly and unambiguously. Use "medium" or "low" for approximations ("ok. 500", "kilkanaście"), contradictions inside the document, values assembled from several places, or values taken from context (for example an e-mail's sent date used as an order date).
+- confidence: "high" only when the document states the value directly and unambiguously. Use "medium" or "low" for approximations ("ok. 500", "kilkana\u015bcie"), contradictions inside the document, values assembled from several places, or values taken from context (for example an e-mail's sent date used as an order date).
 - A field the document clearly does not contain: value null, confidence "high", note saying so.
 - A field the document mentions but you cannot resolve: value null, confidence "low", note explaining why.
 - source_text: a short verbatim quote from the document that the value was read from, copied character for character. null when nothing was found.

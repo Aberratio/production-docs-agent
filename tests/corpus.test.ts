@@ -9,6 +9,7 @@ import { recordedRun } from '../src/documents/browser.ts';
 import { ORDER_COLUMNS, QUALITY_COLUMNS, toErpRecord, toSheetRows } from '../src/domain/mapping.ts';
 import { extractionOf, parseRecording, serializeRecording } from '../src/domain/recording.ts';
 import { reviewExtraction } from '../src/domain/review.ts';
+import { PO_001_LINES, PO_001_ORDER } from './fixtures/po-001-rows.ts';
 
 /**
  * Replays every recorded run over the whole sample corpus. The expected flags below are written from
@@ -33,7 +34,7 @@ const EXPECTED_FLAGS: Record<string, Record<string, string[]>> = {
   'po-004': {
     delivery_date: ['inconsistent'], // 2026-10-12 is before the order date 2026-10-20
     total_net: ['inconsistent'], // 46 560 stated, lines sum to 52 560
-    'lines.0.quantity': ['uncertain'], // 1200 in the table vs "łącznie 1 000 szt."
+    'lines.0.quantity': ['uncertain'], // 1200 in the table vs "1 000 pcs in total" in the remark
   },
   'po-005': {},
   'qr-001': {},
@@ -44,7 +45,7 @@ const EXPECTED_FLAGS: Record<string, Record<string, string[]>> = {
     report_number: ['missing'],
     report_date: ['uncertain'], // complaint date, not inspection date
     batch_number: ['missing'], // label has no batch number
-    nonconforming_qty: ['missing'], // "kilkanaście"
+    nonconforming_qty: ['missing'], // "a dozen or so" instead of a count
     decision: ['missing'],
     inspector: ['uncertain'], // customer's QC contact
   },
@@ -154,17 +155,8 @@ describe('sample corpus', () => {
   it('exports the clean order exactly as the document states it', () => {
     // Expected rows typed from documents/po-001.txt, not produced by the code under test.
     const header = ORDER_COLUMNS.join(',');
-    const order =
-      'po-001,ZK/2026/0412,2026-10-14,Odlewnia Fikcyjna Sp. z o.o.,Jan Przykładowy,2026-11-06,' +
-      '"Magazyn B, ul. Przykładowa 12, 00-000 Testowo",PLN,przelew 30 dni';
     expect(toCsv(ORDER_COLUMNS, toSheetRows(replay('po-001').record))).toBe(
-      [
-        header,
-        `${order},1,WAL-20-H7,"Wałek napędowy fi 20 h7, L=240",400,szt.,38.5,15400,28380,ready,`,
-        `${order},2,TUL-35-B,Tuleja brązowa 35x40x30,250,szt.,21.2,5300,28380,ready,`,
-        `${order},3,KOL-12-S,Kołnierz stalowy DN50,120,szt.,64,7680,28380,ready,`,
-        '',
-      ].join('\r\n'),
+      [header, ...PO_001_LINES.map((line) => `${PO_001_ORDER},${line}`), ''].join('\r\n'),
     );
   });
 

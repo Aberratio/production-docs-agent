@@ -3,13 +3,13 @@ import { renderDocumentHtml } from '../src/documents/render.ts';
 
 describe('renderDocumentHtml', () => {
   it('renders a "# " line as the document heading', () => {
-    expect(renderDocumentHtml('# ZAMÓWIENIE NR 1')).toBe('<h1>ZAMÓWIENIE NR 1</h1>');
+    expect(renderDocumentHtml('# PURCHASE ORDER NO 1')).toBe('<h1>PURCHASE ORDER NO 1</h1>');
   });
 
   it('renders consecutive pipe rows as a table with the first row as header', () => {
-    const html = renderDocumentHtml('| Lp. | Ilość |\n| 1 | 400 |');
+    const html = renderDocumentHtml('| No. | Qty |\n| 1 | 400 |');
     expect(html).toBe(
-      '<table><thead><tr><th>Lp.</th><th>Ilość</th></tr></thead>' +
+      '<table><thead><tr><th>No.</th><th>Qty</th></tr></thead>' +
         '<tbody><tr><td>1</td><td>400</td></tr></tbody></table>',
     );
   });
@@ -19,9 +19,9 @@ describe('renderDocumentHtml', () => {
   });
 
   it('groups other lines into paragraphs separated by blank lines, keeping line breaks', () => {
-    expect(renderDocumentHtml('Od: A\nDo: B\n\nTreść')).toBe(
+    expect(renderDocumentHtml('Od: A\nDo: B\n\nBody')).toBe(
       '<p><span class="ln">Od: A</span><br><span class="ln">Do: B</span></p>' +
-        '<p><span class="ln">Treść</span></p>',
+        '<p><span class="ln">Body</span></p>',
     );
   });
 

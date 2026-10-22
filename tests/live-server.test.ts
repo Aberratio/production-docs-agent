@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createServer, type ViteDevServer } from 'vite';
 import { liveExtractionPlugin } from '../src/live/vite-plugin.ts';
 import type { ParseClient } from '../src/live/extract.ts';
-import { cleanOrder } from './helpers/builders.ts';
+import { cleanOrder } from './fixtures/builders.ts';
 
 /** The live endpoint over real HTTP, with a fake Claude client (no network, no key). */
 let server: ViteDevServer;

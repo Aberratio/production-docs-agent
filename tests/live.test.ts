@@ -7,7 +7,7 @@ import {
   ExtractionError,
   type ParseClient,
 } from '../src/live/extract.ts';
-import { cleanOrder } from './helpers/builders.ts';
+import { cleanOrder } from './fixtures/builders.ts';
 
 const pdfDoc = findDocument('po-001')!;
 const emailDoc = findDocument('po-002')!;
