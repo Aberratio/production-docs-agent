@@ -22,6 +22,7 @@ import {
   type ReviewItem,
 } from '../domain/review.ts';
 import { buildWorkbookSheets } from '../domain/workbook.ts';
+import logoUrl from '../assets/brand/logo.svg';
 import { download, h } from './dom.ts';
 import { matchQuote } from './highlight.ts';
 
@@ -170,7 +171,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
       h(
         'div',
         { class: 'brand' },
-        h('span', { class: 'brand-mark' }, 'kokot.it'),
+        h('img', { class: 'brand-mark', src: logoUrl, alt: 'kokot.it' }),
         h('span', { class: 'brand-sep', 'aria-hidden': 'true' }, '/'),
         h('h1', {}, 'Production docs agent'),
       ),
@@ -682,6 +683,12 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
         'All documents, companies and people are fictional. Recorded runs replay deterministically; run ',
         h('code', {}, 'npm run dev:live'),
         ' with your own key to call Claude.',
+      ),
+      h(
+        'a',
+        { class: 'by', href: 'https://kokot.it', target: '_blank', rel: 'noopener' },
+        h('span', {}, 'by'),
+        h('img', { src: logoUrl, alt: 'kokot.it' }),
       ),
     );
   }
