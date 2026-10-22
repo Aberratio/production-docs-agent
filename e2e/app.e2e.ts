@@ -316,3 +316,46 @@ describe('embedding on another site (the README snippet)', () => {
     );
   });
 });
+
+describe('strict Content Security Policy', () => {
+  // A host that serves the build with scripts limited to its own files and no 'unsafe-eval':
+  // zod must validate without ever probing `new Function`, which the browser reports as a violation.
+  const policy = "script-src 'self'";
+  let cspServer: PreviewServer;
+  let cspBase: string;
+
+  beforeAll(async () => {
+    cspServer = await preview({
+      logLevel: 'silent',
+      preview: { port: 4342, strictPort: false, headers: { 'Content-Security-Policy': policy } },
+    });
+    const url = cspServer.resolvedUrls?.local[0];
+    if (!url) throw new Error('preview server has no URL');
+    cspBase = url;
+  }, 60_000);
+
+  afterAll(() => cspServer.close());
+
+  it('validates the recordings without a single CSP violation or console error', async () => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { violations: string[] };
+      w.violations = [];
+      document.addEventListener('securitypolicyviolation', (e) =>
+        w.violations.push(`${e.violatedDirective} ${e.blockedURI}`),
+      );
+    });
+    const violations = () =>
+      page.evaluate(() => (window as unknown as { violations: string[] }).violations);
+    const response = await page.goto(`${cspBase}?doc=po-002`);
+    expect(response?.headers()['content-security-policy']).toBe(policy);
+    await expect
+      .poll(() => field('Delivery date').getAttribute('aria-label'))
+      .toBe('Delivery date: needs review');
+    expect(await violations()).toEqual([]);
+    // A quality report too, so both extraction schemas have parsed a recording under the policy.
+    await page.goto(`${cspBase}?doc=qr-001`);
+    await expect.poll(() => page.locator('.field').count()).toBeGreaterThan(0);
+    expect(await violations()).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+});
