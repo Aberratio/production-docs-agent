@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from './zod.ts';
 
 /**
  * Extraction schemas — the exact shape Claude must return (structured output) and the shape of the

@@ -166,14 +166,14 @@ npm test                    # the corpus test shows which flags changed
 
 ## Tests and quality
 
-| command                  | what it checks                                                                                                                                                     |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `npm test`               | 303 unit tests (Vitest): review rules, decisions, mapping, export, corpus replay, live endpoint, dictionaries, language and wording guards, brand tokens, contrast |
-| `npm run test:e2e`       | 16 browser tests (Playwright, Chromium) against the static build: review flow, exports, language switch, embedding                                                 |
-| `npm run lint`           | ESLint + Prettier                                                                                                                                                  |
-| `npm run typecheck`      | `tsc --noEmit` (strict)                                                                                                                                            |
-| `npm run check:wording`  | scans the build, PDFs, documents and docs for wording that must not ship                                                                                           |
-| `npm run check:language` | no Polish outside the UI dictionary and the sample data (code, comments, tests, docs in English)                                                                   |
+| command                  | what it checks                                                                                                                                                                  |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm test`               | 304 unit tests (Vitest): review rules, decisions, mapping, export, corpus replay, live endpoint, dictionaries, language and wording guards, brand tokens, contrast, jitless zod |
+| `npm run test:e2e`       | 17 browser tests (Playwright, Chromium) against the static build: review flow, exports, language switch, embedding, strict CSP                                                  |
+| `npm run lint`           | ESLint + Prettier                                                                                                                                                               |
+| `npm run typecheck`      | `tsc --noEmit` (strict)                                                                                                                                                         |
+| `npm run check:wording`  | scans the build, PDFs, documents and docs for wording that must not ship                                                                                                        |
+| `npm run check:language` | no Polish outside the UI dictionary and the sample data (code, comments, tests, docs in English)                                                                                |
 
 CI runs all of them on every push and pull request. `test:e2e`, `docs:generate` and `screenshots`
 need `npx playwright install chromium` once.
@@ -190,6 +190,9 @@ Other scripts: `npm run docs:generate` regenerates the PDFs from `documents/*.tx
   bodies, and only requests whose `Origin` is the dev server itself, so another web page open in
   your browser cannot spend your credits.
 - Exports neutralise spreadsheet formula injection; the document view escapes all document text.
+- **Runs under a strict Content Security Policy.** zod is set to jitless mode
+  (`src/domain/zod.ts`), so validation never compiles code with `new Function`; an e2e test serves
+  the build with `script-src 'self'` (no `'unsafe-eval'`) and asserts no CSP violation is reported.
 
 ## Embedding
 

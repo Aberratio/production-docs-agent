@@ -15,6 +15,17 @@ export default tseslint.config(
     },
   },
   {
+    // zod is configured once (jitless, for a strict CSP) in src/domain/zod.ts; import it from there.
+    files: ['src/**/*.ts', 'scripts/**/*.ts'],
+    ignores: ['src/domain/zod.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { paths: [{ name: 'zod', message: 'Import z from src/domain/zod.ts (jitless config).' }] },
+      ],
+    },
+  },
+  {
     files: ['tests/**/*.ts', 'e2e/**/*.ts'],
     rules: { '@typescript-eslint/no-non-null-assertion': 'off' },
   },
