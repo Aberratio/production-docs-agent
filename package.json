@@ -22,7 +22,8 @@
     "record": "tsx scripts/record.ts",
     "screenshots": "tsx scripts/screenshots.ts",
     "test:e2e": "vite build && vitest run --config vitest.e2e.config.ts",
-    "check:wording": "tsx scripts/check-wording.ts"
+    "check:wording": "tsx scripts/check-wording.ts",
+    "check:language": "tsx scripts/check-language.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
