@@ -25,22 +25,22 @@ export function liveExtractionPlugin(options: HandlerOptions): Plugin {
     apply: 'serve',
     configureServer(server) {
       server.middlewares.use('/api/extract', (req, res) => {
-        if (req.method !== 'POST') {
-          res.statusCode = 405;
-          res.end();
-          return;
-        }
-        if (!isSameOrigin(req.headers.origin, req.headers.host)) {
-          // Another local app or website must not spend the owner's API credits.
-          res.statusCode = 403;
-          res.end();
-          return;
-        }
+        // Every answer is JSON `{ error }` or a recording, so the client can always read it.
         const respond = (status: number, payload: unknown) => {
           res.statusCode = status;
           res.setHeader('Content-Type', 'application/json; charset=utf-8');
           res.end(JSON.stringify(payload));
         };
+        if (req.method !== 'POST') {
+          res.setHeader('Allow', 'POST');
+          respond(405, { error: 'Use POST.' });
+          return;
+        }
+        if (!isSameOrigin(req.headers.origin, req.headers.host)) {
+          // Another local app or website must not spend the owner's API credits.
+          respond(403, { error: 'Cross-origin requests are not allowed.' });
+          return;
+        }
         let body = '';
         let tooLarge = false;
         req.setEncoding('utf8');

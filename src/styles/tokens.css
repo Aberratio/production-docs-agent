@@ -203,11 +203,12 @@
   /* form controls and outlined buttons need 3:1 against the background (WCAG 1.4.11) */
   --color-border-input: var(--ink-400);
   /* tinted backgrounds for status surfaces (contrast checked in tests/tokens.test.ts) */
-  --color-success-soft: rgb(79 209 161 / 0.12);
-  --color-warning-soft: rgb(255 209 102 / 0.1);
-  --color-danger-soft: rgb(255 122 122 / 0.12);
+  /* derived from the brand primitives, so a brand update carries over */
+  --color-success-soft: color-mix(in srgb, var(--mint-300) 12%, transparent);
+  --color-warning-soft: color-mix(in srgb, var(--sun-300) 10%, transparent);
+  --color-danger-soft: color-mix(in srgb, var(--coral-300) 12%, transparent);
   /* the document line a selected field was read from (tint + warning outline) */
-  --color-highlight: rgb(255 209 102 / 0.22);
+  --color-highlight: color-mix(in srgb, var(--sun-300) 22%, transparent);
   --leading-none: 1;
   --tracking-wide: 0.04em;
 }

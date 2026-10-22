@@ -118,7 +118,15 @@ describe('demo corpus', () => {
       expect(record.review.open_fields).toEqual(open);
       expect(record.review.status).toBe(open.length === 0 ? 'ready' : 'needs_review');
       const json = record as unknown as Record<string, unknown>;
-      for (const path of open.filter((p) => !p.includes('.'))) expect(json[path]).toBeNull();
+      for (const path of open) {
+        const line = /^lines\.(\d+)\.(\w+)$/.exec(path);
+        if (line && record.record_type === 'sales_order') {
+          const row = record.lines[Number(line[1])] as unknown as Record<string, unknown>;
+          expect(row[line[2]!], path).toBeNull();
+        } else if (path !== 'lines') {
+          expect(json[path], path).toBeNull();
+        }
+      }
     },
   );
 

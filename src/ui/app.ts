@@ -14,7 +14,7 @@ import {
   toSheetRows,
   type ErpRecord,
 } from '../domain/mapping.ts';
-import { extractionOf, parseRecording, type Recording } from '../domain/recording.ts';
+import { extractionOf, type Recording } from '../domain/recording.ts';
 import {
   LINES_PLACEHOLDER,
   reviewExtraction,
@@ -24,6 +24,7 @@ import {
 import { buildWorkbookSheets } from '../domain/workbook.ts';
 import logoUrl from '../assets/brand/logo.svg';
 import { download, h } from './dom.ts';
+import { readExtractResponse } from './live-client.ts';
 import { matchQuote } from './highlight.ts';
 
 const LIVE = import.meta.env.MODE === 'live';
@@ -656,12 +657,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ documentId: docId }),
       });
-      const body: unknown = await res.json();
-      if (!res.ok) {
-        const message = (body as { error?: string }).error ?? `HTTP ${res.status}`;
-        throw new Error(message);
-      }
-      state.runs.set(docId, parseRecording(body));
+      state.runs.set(docId, await readExtractResponse(res));
       state.decisions.delete(docId);
       state.live = { busy: false, error: null };
     } catch (error) {
