@@ -47,6 +47,7 @@ async function main(): Promise<void> {
     await page.press('.field[data-path="payment_terms"] input', 'Enter');
     await page.click('.field[data-path="delivery_date"] .btn-approve');
     await page.click('.field[data-path="delivery_date"] .field-label');
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(400);
     await page.screenshot({ path: `${OUT}/human-decisions-po-002.png` });
 
