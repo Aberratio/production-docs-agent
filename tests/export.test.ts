@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as XLSX from 'xlsx';
 import { csvCell, toCsv, toXlsx } from '../src/domain/export.ts';
+import { SAMPLE } from './fixtures/builders.ts';
 
 describe('csvCell — RFC 4180 escaping', () => {
   it.each([
@@ -37,10 +38,10 @@ describe('toCsv', () => {
 
   it('writes a header and one CRLF-terminated record per row, in column order', () => {
     const csv = toCsv(columns, [
-      { qty: 2, name: 'Wałek, fi 20', id: 'A' },
+      { qty: 2, name: `${SAMPLE.shaft}, fi 20`, id: 'A' },
       { id: 'B', name: null, qty: 0.5 },
     ]);
-    expect(csv).toBe('id,name,qty\r\nA,"Wałek, fi 20",2\r\nB,,0.5\r\n');
+    expect(csv).toBe(`id,name,qty\r\nA,"${SAMPLE.shaft}, fi 20",2\r\nB,,0.5\r\n`);
   });
 
   it('writes only the header for no rows', () => {

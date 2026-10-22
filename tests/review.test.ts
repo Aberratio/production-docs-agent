@@ -8,7 +8,8 @@ import {
   REPORT_TEXT,
   sure,
   unresolved,
-} from './helpers/builders.ts';
+  SAMPLE,
+} from './fixtures/builders.ts';
 
 function flagged(items: ReviewItem[]) {
   return Object.fromEntries(
@@ -93,7 +94,9 @@ describe('reviewExtraction — purchase orders', () => {
     });
     const item = items.find((i) => i.path === 'lines.0.quantity');
     expect(item?.needsReview).toBe(true);
-    expect(item?.issues).toEqual([{ code: 'uncertain', message: 'Approximate quantity ("ok.").' }]);
+    expect(item?.issues).toEqual([
+      expect.objectContaining({ code: 'uncertain', message: 'Approximate quantity ("ok.").' }),
+    ]);
   });
 
   it('gives an uncertain value without a note a generic reason', () => {
@@ -207,7 +210,7 @@ describe('reviewExtraction — quality reports', () => {
   it('does not question a rejection with many defects', () => {
     const items = reviewReport((r) => {
       r.nonconforming_qty = sure(9, 'niezgodnych: 1');
-      r.decision = sure('rejected' as const, 'PRZYJĘTO');
+      r.decision = sure('rejected' as const, SAMPLE.acceptedPl);
     });
     expect(flagged(items)).toEqual({});
   });
@@ -215,7 +218,7 @@ describe('reviewExtraction — quality reports', () => {
   it('flags more nonconforming parts than inspected', () => {
     const items = reviewReport((r) => {
       r.nonconforming_qty = sure(81, 'niezgodnych: 1');
-      r.decision = sure('rejected' as const, 'PRZYJĘTO');
+      r.decision = sure('rejected' as const, SAMPLE.acceptedPl);
     });
     expect(flagged(items)).toEqual({ nonconforming_qty: ['inconsistent'] });
   });
@@ -274,13 +277,16 @@ describe('reviewExtraction — checks that do not trust the model', () => {
     },
   );
 
-  it.each([['ok. 10 szt.'], ['około 10 szt.'], ['approx. 10 pcs'], ['~10 szt.'], ['ca. 10 szt.']])(
-    'flags an approximate quantity even at high confidence: %s',
-    (quote) => {
-      const items = reviewOrder((o) => (o.lines[0]!.quantity = sure(10, quote)), withLine(quote));
-      expect(flagged(items)).toEqual({ 'lines.0.quantity': ['uncertain'] });
-    },
-  );
+  it.each([
+    ['ok. 10 szt.'],
+    [SAMPLE.aboutTenPieces],
+    ['approx. 10 pcs'],
+    ['~10 szt.'],
+    ['ca. 10 szt.'],
+  ])('flags an approximate quantity even at high confidence: %s', (quote) => {
+    const items = reviewOrder((o) => (o.lines[0]!.quantity = sure(10, quote)), withLine(quote));
+    expect(flagged(items)).toEqual({ 'lines.0.quantity': ['uncertain'] });
+  });
 
   it('flags a vague piece count in a quality report even at high confidence', () => {
     const text = `${REPORT_TEXT}\nna kilkunastu sztukach`;

@@ -1,5 +1,6 @@
 import './styles/tokens.css';
 import './styles/app.css';
+import { resolveLang } from './i18n/index.ts';
 import { startApp } from './ui/app.ts';
 import { parentOrigin } from './ui/embed.ts';
 
@@ -8,7 +9,18 @@ const embedded = params.get('embed') === '1';
 if (embedded) document.documentElement.classList.add('embed');
 
 const root = document.querySelector<HTMLElement>('#app');
-if (root) startApp(root, params.get('doc'));
+if (root) {
+  startApp(root, {
+    docId: params.get('doc'),
+    lang: resolveLang(window.location.search, navigator.languages ?? [navigator.language]),
+    // Keep the choice in the address bar, so a reload or a shared link opens the same language.
+    onLangChange: (lang) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('lang', lang);
+      window.history.replaceState(null, '', url);
+    },
+  });
+}
 
 // When embedded (kokot.it case study), report the content height so the parent can size the iframe.
 if (embedded && window.parent !== window) {

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createExtractHandler } from '../src/live/handler.ts';
 import type { ParseClient } from '../src/live/extract.ts';
 import { parseRecording } from '../src/domain/recording.ts';
-import { cleanReport } from './helpers/builders.ts';
+import { cleanReport } from './fixtures/builders.ts';
 
 function client(parsed_output: unknown): ParseClient & { used: number } {
   const c = {

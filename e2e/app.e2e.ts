@@ -10,6 +10,8 @@ import * as XLSX from 'xlsx';
 import { chromium, type Browser, type Page } from 'playwright';
 import { preview, type PreviewServer } from 'vite';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { pl } from '../src/i18n/pl.ts';
+import { RECORDED_NOTES_PL } from '../src/i18n/recorded-notes.pl.ts';
 
 let server: PreviewServer;
 let browser: Browser;
@@ -18,7 +20,7 @@ let base: string;
 let errors: string[];
 
 beforeAll(async () => {
-  server = await preview({ logLevel: 'silent', preview: { port: 4400, strictPort: false } });
+  server = await preview({ logLevel: 'silent', preview: { port: 4322, strictPort: false } });
   const url = server.resolvedUrls?.local[0];
   if (!url) throw new Error('preview server has no URL');
   base = url;
@@ -31,7 +33,12 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  page = await browser.newPage({ acceptDownloads: true, viewport: { width: 1280, height: 900 } });
+  // An English browser: the UI follows the browser language when the URL does not set one.
+  page = await browser.newPage({
+    acceptDownloads: true,
+    viewport: { width: 1280, height: 900 },
+    locale: 'en-US',
+  });
   errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => {
@@ -109,7 +116,7 @@ describe('review flow (recorded mode)', () => {
     const cols = header?.split(',') ?? [];
     const cells = first?.split(',') ?? [];
     expect(cells[cols.indexOf('delivery_date')]).toBe('');
-    expect(cells[cols.indexOf('order_number')]).toBe('DM-7781');
+    expect(cells[cols.indexOf('order_number')]).toBe('TM-7781');
     expect(first).toContain('needs_review');
   });
 
@@ -172,6 +179,64 @@ describe('review flow (recorded mode)', () => {
     expect(await page.locator('.foot').textContent()).toContain(
       'Sample data · fictional companies',
     );
+  });
+});
+
+describe('language (English and Polish UI)', () => {
+  it('switches to Polish and back from the header, keeping the choice in the URL', async () => {
+    await page.goto(`${base}?doc=po-002`);
+    await expect.poll(() => page.locator('html').getAttribute('lang')).toBe('en');
+    await page.getByRole('button', { name: 'PL', exact: true }).click();
+    await expect.poll(() => page.locator('html').getAttribute('lang')).toBe('pl');
+    expect(page.url()).toContain('lang=pl');
+    expect(await page.locator('.mode').textContent()).toBe(pl['mode.recorded']);
+    const delivery = page.getByRole('group', {
+      name: new RegExp(`^${pl['field.purchase_order.delivery_date']}:`),
+    });
+    expect(await delivery.getAttribute('aria-label')).toBe(
+      `${pl['field.purchase_order.delivery_date']}: ${pl['status.needs_review']}`,
+    );
+    expect(await page.title()).toBe(pl['app.pageTitle']);
+
+    await page.getByRole('button', { name: 'EN', exact: true }).click();
+    await expect.poll(() => page.locator('.mode').textContent()).toBe('Recorded run');
+    expect(page.url()).toContain('lang=en');
+  });
+
+  it('opens in Polish with ?lang=pl, translating review reasons and recorded notes', async () => {
+    await page.goto(`${base}?doc=po-002&lang=pl`);
+    const delivery = page.getByRole('group', {
+      name: new RegExp(`^${pl['field.purchase_order.delivery_date']}:`),
+    });
+    await expect.poll(() => delivery.count()).toBe(1);
+    const note =
+      '"03/11" has no year and could mean 3 November or 11 March; read as DD/MM in 2026.';
+    expect(await delivery.textContent()).toContain(RECORDED_NOTES_PL[note]);
+    expect(await page.locator('.foot').textContent()).toContain(pl['foot.note']);
+    expect(await page.getByRole('button', { name: pl['export.csv'] }).count()).toBe(1);
+    expect(errors).toEqual([]);
+  });
+
+  it('follows a Polish browser when the URL does not choose', async () => {
+    const polish = await browser.newPage({ locale: 'pl-PL' });
+    await polish.goto(`${base}?doc=qr-002`);
+    await expect.poll(() => polish.locator('html').getAttribute('lang')).toBe('pl');
+    expect(await polish.locator('.summary').textContent()).toContain(pl['data.summary.open.one']);
+    await polish.goto(`${base}?doc=qr-002&lang=en`);
+    await expect.poll(() => polish.locator('html').getAttribute('lang')).toBe('en');
+    await polish.close();
+  });
+
+  it('exports English column names and values whatever the UI language', async () => {
+    await page.goto(`${base}?doc=po-002&lang=pl`);
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: pl['export.csv'] }).click(),
+    ]);
+    const [header] = readFileSync(await download.path(), 'utf8')
+      .trimStart()
+      .split(/\r?\n/);
+    expect(header?.split(',')).toContain('order_number');
   });
 });
 

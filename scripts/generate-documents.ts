@@ -22,8 +22,9 @@ const PAGE_CSS = `
   th { background: #eee; }
 `;
 
+// Printed on every PDF page, in the documents' language (Polish) and in English.
 const FOOTER = `<div style="width:100%;font-size:8px;color:#666;text-align:center;font-family:Arial,sans-serif">
-  Dokument fikcyjny — dane przykładowe · Fictional sample document</div>`;
+  Dokument fikcyjny — dane przyk\u0142adowe · Fictional sample document</div>`;
 
 async function main(): Promise<void> {
   mkdirSync(PDF_DIR, { recursive: true });

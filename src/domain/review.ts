@@ -4,6 +4,8 @@ import type {
   PurchaseOrderExtraction,
   QualityReportExtraction,
 } from './schema.ts';
+import { english, t, type Msg } from '../i18n/index.ts';
+import type { MessageKey } from '../i18n/en.ts';
 
 /**
  * Deterministic review of a model extraction. The model may say it is unsure; this layer never
@@ -15,8 +17,20 @@ export type IssueCode = 'missing' | 'uncertain' | 'invalid' | 'not_in_document' 
 
 export interface Issue {
   code: IssueCode;
+  /** The reason, rendered in the reader's language by the UI. */
+  msg: Msg;
+  /** The same reason in English (exports and comparisons). */
   message: string;
 }
+
+export const msg = (key: MessageKey, params?: Msg['params']): Msg =>
+  params ? { key, params } : { key };
+
+export const issue = (code: IssueCode, reason: Msg): Issue => ({
+  code,
+  msg: reason,
+  message: english(reason),
+});
 
 /** How a value is validated and how a human correction is parsed. */
 export type FieldType = 'text' | 'date' | 'quantity' | 'count' | 'money' | 'decision';
@@ -39,45 +53,57 @@ interface FieldSpec {
   required: boolean;
 }
 
-const spec = (key: string, label: string, type: FieldType, required = true): FieldSpec => ({
-  key,
-  label,
-  type,
-  required,
-});
+export type LabelScope = 'purchase_order' | 'line' | 'quality_report';
+
+/** Dictionary key of a field's label; its English text is the label in exports. */
+export const labelKey = (scope: LabelScope, key: string): MessageKey =>
+  `field.${scope}.${key}` as MessageKey;
+
+const specs =
+  (scope: LabelScope) =>
+  (key: string, type: FieldType, required = true): FieldSpec => ({
+    key,
+    label: t('en', labelKey(scope, key)),
+    type,
+    required,
+  });
+
+const orderField = specs('purchase_order');
+const lineField = specs('line');
+const reportField = specs('quality_report');
 
 export const ORDER_FIELDS: readonly FieldSpec[] = [
-  spec('order_number', 'Order number', 'text'),
-  spec('order_date', 'Order date', 'date'),
-  spec('customer_name', 'Customer', 'text'),
-  spec('contact_person', 'Contact person', 'text', false),
-  spec('delivery_date', 'Delivery date', 'date'),
-  spec('delivery_address', 'Delivery address', 'text'),
-  spec('currency', 'Currency', 'text'),
-  spec('payment_terms', 'Payment terms', 'text', false),
-  spec('total_net', 'Total net', 'money', false),
+  orderField('order_number', 'text'),
+  orderField('order_date', 'date'),
+  orderField('customer_name', 'text'),
+  orderField('contact_person', 'text', false),
+  orderField('delivery_date', 'date'),
+  orderField('delivery_address', 'text'),
+  orderField('currency', 'text'),
+  orderField('payment_terms', 'text', false),
+  orderField('total_net', 'money', false),
 ];
 
 export const LINE_FIELDS: readonly FieldSpec[] = [
-  spec('item_code', 'item code', 'text'),
-  spec('description', 'description', 'text'),
-  spec('quantity', 'quantity', 'quantity'),
-  spec('unit', 'unit', 'text'),
-  spec('unit_price', 'unit price', 'money'),
+  lineField('item_code', 'text'),
+  lineField('description', 'text'),
+  lineField('quantity', 'quantity'),
+  lineField('unit', 'text'),
+  lineField('unit_price', 'money'),
 ];
 
 export const REPORT_FIELDS: readonly FieldSpec[] = [
-  spec('report_number', 'Report number', 'text'),
-  spec('report_date', 'Inspection date', 'date'),
-  spec('item_code', 'Item code', 'text'),
-  spec('batch_number', 'Batch', 'text'),
-  spec('order_reference', 'Order reference', 'text', false),
-  spec('inspected_qty', 'Inspected (pcs)', 'count'),
-  spec('acceptance_number', 'Acceptance number (Ac)', 'count', false),
-  spec('nonconforming_qty', 'Nonconforming (pcs)', 'count'),
-  spec('defect_description', 'Defect description', 'text', false),
-  spec('decision', 'Decision', 'decision'),
-  spec('inspector', 'Inspector', 'text', false),
+  reportField('report_number', 'text'),
+  reportField('report_date', 'date'),
+  reportField('item_code', 'text'),
+  reportField('batch_number', 'text'),
+  reportField('order_reference', 'text', false),
+  reportField('inspected_qty', 'count'),
+  reportField('acceptance_number', 'count', false),
+  reportField('nonconforming_qty', 'count'),
+  reportField('defect_description', 'text', false),
+  reportField('decision', 'decision'),
+  reportField('inspector', 'text', false),
 ];
 
 const PIECE_UNITS = new Set(['szt', 'szt.', 'sztuk', 'pcs', 'pcs.', 'pc', 'pc.', 'pieces', 'ea']);
@@ -103,32 +129,24 @@ export function normalizeForMatch(text: string): string {
 }
 
 /** Format rule for one value; returns a reason when the value is unusable as-is. */
-export function formatProblem(type: FieldType, value: unknown, unit?: unknown): string | null {
+export function formatProblem(type: FieldType, value: unknown, unit?: unknown): Msg | null {
   switch (type) {
     case 'text':
-      return typeof value === 'string' && value.trim() !== '' ? null : 'Expected non-empty text.';
+      return typeof value === 'string' && value.trim() !== '' ? null : msg('rule.text');
     case 'date':
-      return isIsoDate(value)
-        ? null
-        : `"${String(value)}" is not an unambiguous date (YYYY-MM-DD).`;
+      return isIsoDate(value) ? null : msg('rule.date', { value: String(value) });
     case 'money':
       return typeof value === 'number' && Number.isFinite(value) && value >= 0
         ? null
-        : 'Expected an amount of zero or more.';
+        : msg('rule.money');
     case 'count':
-      return Number.isInteger(value) && (value as number) >= 0
-        ? null
-        : 'Expected a whole number of pieces.';
+      return Number.isInteger(value) && (value as number) >= 0 ? null : msg('rule.count');
     case 'quantity':
       if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0)
-        return 'Expected a quantity greater than zero.';
-      return isPieceUnit(unit) && !Number.isInteger(value)
-        ? 'Quantity in pieces must be a whole number.'
-        : null;
+        return msg('rule.quantity');
+      return isPieceUnit(unit) && !Number.isInteger(value) ? msg('rule.quantityWhole') : null;
     case 'decision':
-      return typeof value === 'string' && DECISIONS.has(value)
-        ? null
-        : 'Expected accepted, rejected or conditional.';
+      return typeof value === 'string' && DECISIONS.has(value) ? null : msg('rule.decision');
   }
 }
 
@@ -139,72 +157,61 @@ function fieldIssues(
   unit?: unknown,
 ): Issue[] {
   const issues: Issue[] = [];
+  // The model's own note, when it wrote one, is the most specific reason.
+  const noteOr = (fallback: Msg): Msg =>
+    f.note ? msg('issue.modelNote', { note: f.note }) : fallback;
   if (f.value === null) {
     if (s.required) {
-      issues.push({
-        code: 'missing',
-        message: f.note ?? 'Required, but not found in the document.',
-      });
+      issues.push(issue('missing', noteOr(msg('issue.missing'))));
     } else if (f.confidence !== 'high') {
       // Optional, but the model saw something it could not resolve — a human should look.
-      issues.push({
-        code: 'uncertain',
-        message: f.note ?? 'The document mentions this value but it could not be read.',
-      });
+      issues.push(issue('uncertain', noteOr(msg('issue.unreadable'))));
     }
     return issues;
   }
   if (f.confidence !== 'high') {
-    issues.push({
-      code: 'uncertain',
-      message: f.note ?? `The model was not sure about this value (${f.confidence} confidence).`,
-    });
+    issues.push(issue('uncertain', noteOr(msg(`issue.unsure.${f.confidence}`))));
   }
   const notation = notationProblem(s.type, f.source_text);
   if (notation && !issues.some((i) => i.code === 'uncertain')) {
-    issues.push({ code: 'uncertain', message: notation });
+    issues.push(issue('uncertain', notation));
   }
   const problem = formatProblem(s.type, f.value, unit);
-  if (problem) issues.push({ code: 'invalid', message: problem });
+  if (problem) issues.push(issue('invalid', problem));
   const quote = f.source_text?.trim() ?? '';
   if (quote === '') {
-    issues.push({
-      code: 'not_in_document',
-      message: 'No source quote — this value cannot be traced to the document.',
-    });
+    issues.push(issue('not_in_document', msg('issue.noQuote')));
   } else if (!normalizedDoc.includes(normalizeForMatch(quote))) {
-    issues.push({
-      code: 'not_in_document',
-      message: `Quoted source "${quote}" does not appear in the document.`,
-    });
+    issues.push(issue('not_in_document', msg('issue.quoteMissing', { quote })));
   }
   return issues;
 }
 
 const ISO_DATE_IN_TEXT = /\b\d{4}-\d{2}-\d{2}\b/;
 const DATE_IN_TEXT = /\b(\d{1,2})([./-])(\d{1,2})(?:\2(\d{2,4}))?(?!\d)/;
-// "ok." / "około" / "ca." / "approx" / "about" / "circa" / "kilka…" / "kilkanaście…" / "~"
-const APPROXIMATE = /(?:^|[^\p{L}])(?:ok\.|około|ca\.|approx|about|circa|kilk)|~/iu;
+// Approximate counts in Polish and English documents: "ok." (about) and its unabbreviated form,
+// "ca.", "approx", "about", "circa", the Polish "kilk…" words ("a few", "a dozen or so") and "~".
+const APPROXIMATE = /(?:^|[^\p{L}])(?:ok\.|oko\u0142o|ca\.|approx|about|circa|kilk)|~/iu;
 
 /**
  * Re-reads the quoted source for notations a value should never be trusted from, whatever
  * confidence the model reports: a date without a year or with swappable day and month, or an
  * approximate count.
  */
-export function notationProblem(type: FieldType, source: string | null): string | null {
+export function notationProblem(type: FieldType, source: string | null): Msg | null {
   if (!source) return null;
   if (type === 'date') {
     if (ISO_DATE_IN_TEXT.test(source)) return null;
     const m = DATE_IN_TEXT.exec(source);
     if (!m) return null;
-    if (!m[4]) return `"${m[0]}" has no year — the year was assumed.`;
+    if (!m[4]) return msg('notation.noYear', { date: m[0] });
     if (m[2] === '/' && Number(m[1]) <= 12 && Number(m[3]) <= 12) {
-      return `"${m[0]}" could be read as day and month either way round.`;
+      return msg('notation.swappable', { date: m[0] });
     }
     return null;
   }
   if ((type === 'quantity' || type === 'count') && APPROXIMATE.test(source)) {
-    return `"${source}" is an approximation, not an exact count.`;
+    return msg('notation.approximate', { source });
   }
   return null;
 }
@@ -235,11 +242,11 @@ function reviewOrder(data: PurchaseOrderExtraction, doc: string): ReviewItem[] {
   if (data.lines.length === 0) {
     items.push({
       path: LINES_PLACEHOLDER,
-      label: 'Order lines',
+      label: t('en', labelKey('purchase_order', LINES_PLACEHOLDER)),
       type: 'text',
       required: true,
       field: { value: null, confidence: 'low', source_text: null, note: null },
-      issues: [{ code: 'missing', message: 'No order lines found in the document.' }],
+      issues: [issue('missing', msg('issue.noLines'))],
       needsReview: false,
     });
   }
@@ -250,7 +257,7 @@ function reviewOrder(data: PurchaseOrderExtraction, doc: string): ReviewItem[] {
       items.push(
         item(
           `lines.${i}.${s.key}`,
-          `Line ${i + 1} · ${s.label}`,
+          t('en', 'field.line.label', { n: i + 1, field: s.label }),
           s,
           fieldOf(lrec, s.key),
           doc,
@@ -285,21 +292,18 @@ export function crossFieldIssues(
   valueAt: (path: string) => unknown,
 ): CrossFieldIssue[] {
   const out: CrossFieldIssue[] = [];
-  const add = (path: string, message: string) =>
-    out.push({ path, issue: { code: 'inconsistent', message } });
+  const add = (path: string, reason: Msg) =>
+    out.push({ path, issue: issue('inconsistent', reason) });
 
   if (paths.includes('report_number')) {
     const inspected = numberAt(valueAt('inspected_qty'));
     const bad = numberAt(valueAt('nonconforming_qty'));
     const ac = numberAt(valueAt('acceptance_number'));
     if (inspected !== null && bad !== null && bad > inspected) {
-      add('nonconforming_qty', `${bad} nonconforming parts out of ${inspected} inspected.`);
+      add('nonconforming_qty', msg('cross.overInspected', { bad, inspected }));
     }
     if (valueAt('decision') === 'accepted' && bad !== null && ac !== null && bad > ac) {
-      add(
-        'decision',
-        `Batch accepted although ${bad} nonconforming parts exceed the acceptance number ${ac}.`,
-      );
+      add('decision', msg('cross.acceptedOverAc', { bad, ac }));
     }
     return out;
   }
@@ -307,7 +311,7 @@ export function crossFieldIssues(
   const ordered = valueAt('order_date');
   const delivery = valueAt('delivery_date');
   if (isIsoDate(ordered) && isIsoDate(delivery) && delivery < ordered) {
-    add('delivery_date', `Delivery date ${delivery} is before the order date ${ordered}.`);
+    add('delivery_date', msg('cross.deliveryBeforeOrder', { delivery, ordered }));
   }
   const lineCount = paths.filter((p) => /^lines\.\d+\.quantity$/.test(p)).length;
   const total = numberAt(valueAt('total_net'));
@@ -321,7 +325,7 @@ export function crossFieldIssues(
     if (Math.abs(sum - total) >= 0.005) {
       add(
         'total_net',
-        `Stated total ${total.toFixed(2)} differs from the sum of the lines ${sum.toFixed(2)}.`,
+        msg('cross.totalMismatch', { total: total.toFixed(2), sum: sum.toFixed(2) }),
       );
     }
   }

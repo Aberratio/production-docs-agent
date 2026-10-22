@@ -3,7 +3,7 @@ import { resolveFields } from '../src/domain/decisions.ts';
 import { reviewExtraction } from '../src/domain/review.ts';
 import { buildWorkbookSheets, REVIEW_COLUMNS } from '../src/domain/workbook.ts';
 import type { Extraction } from '../src/domain/schema.ts';
-import { absent, cleanOrder, cleanReport, ORDER_TEXT, REPORT_TEXT } from './helpers/builders.ts';
+import { absent, cleanOrder, cleanReport, ORDER_TEXT, REPORT_TEXT } from './fixtures/builders.ts';
 
 function entry(documentId: string, extraction: Extraction, text: string, decisions = {}) {
   return {

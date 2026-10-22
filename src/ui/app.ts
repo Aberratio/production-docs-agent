@@ -16,12 +16,23 @@ import {
 } from '../domain/mapping.ts';
 import { extractionOf, type Recording } from '../domain/recording.ts';
 import {
+  labelKey,
   LINES_PLACEHOLDER,
   reviewExtraction,
-  type IssueCode,
   type ReviewItem,
 } from '../domain/review.ts';
 import { buildWorkbookSheets } from '../domain/workbook.ts';
+import type { MessageKey } from '../i18n/en.ts';
+import {
+  format,
+  LANGS,
+  t,
+  tPlural,
+  type Lang,
+  type Msg,
+  type Params,
+  type PluralKey,
+} from '../i18n/index.ts';
 import logoUrl from '../assets/brand/logo.svg';
 import { download, h } from './dom.ts';
 import { readExtractResponse } from './live-client.ts';
@@ -30,21 +41,26 @@ import { matchQuote } from './highlight.ts';
 const LIVE = import.meta.env.MODE === 'live';
 
 interface State {
+  lang: Lang;
   docId: string;
   runs: Map<string, Recording>;
   decisions: Map<string, Record<string, Decision>>;
   selected: string | null;
   editing: string | null;
-  editError: string | null;
+  editError: Msg | null;
   /** What the user typed into a correction that failed validation (kept across re-render). */
   editDraft: string | null;
   /** Element to focus after the next render (the editor it replaced is gone). */
   focusAfter: string | null;
+  /** Why the last export failed (the browser's message), shown under the export buttons. */
   exportError: string | null;
   /** Whether the ERP JSON panel is expanded (kept across re-renders). */
   jsonOpen: boolean;
   live: { busy: boolean; error: string | null };
 }
+
+/** Upper-cases the first letter (line field labels are lower case after "Line n ·"). */
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 interface View {
   doc: SampleDocument;
@@ -54,23 +70,17 @@ interface View {
   record: ErpRecord;
 }
 
-const ISSUE_LABEL: Record<IssueCode, string> = {
-  missing: 'Missing',
-  uncertain: 'Uncertain',
-  invalid: 'Invalid',
-  not_in_document: 'Not in document',
-  inconsistent: 'Contradiction',
-};
+export interface AppOptions {
+  docId: string | null;
+  lang: Lang;
+  /** Called after the reader switches language (e.g. to keep `?lang=` in the address bar). */
+  onLangChange?: (lang: Lang) => void;
+}
 
-const STATUS_LABEL: Record<ResolvedField['status'], string> = {
-  auto: 'auto',
-  needs_review: 'needs review',
-  approved: 'approved',
-  corrected: 'corrected',
-};
-
-export function startApp(root: HTMLElement, initialDocId: string | null): void {
+export function startApp(root: HTMLElement, options: AppOptions): void {
+  const initialDocId = options.docId;
   const state: State = {
+    lang: options.lang,
     docId: initialDocId && findDocument(initialDocId) ? initialDocId : (DOCUMENTS[0]?.id ?? ''),
     runs: new Map(DOCUMENTS.map((d) => [d.id, recordedRun(d.id)])),
     decisions: new Map(),
@@ -82,6 +92,23 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     exportError: null,
     jsonOpen: false,
     live: { busy: false, error: null },
+  };
+
+  const tr = (key: MessageKey, params?: Params) => t(state.lang, key, params);
+  const trPlural = (key: PluralKey, count: number) => tPlural(state.lang, key, count);
+  const docKey = (id: string, part: 'title' | 'scenario') => `docs.${id}.${part}` as MessageKey;
+  const statusLabel = (status: ResolvedField['status']) => tr(`status.${status}`);
+
+  /** The field's label in the reader's language, from its review path. */
+  const fieldLabel = (kind: Recording['kind'], path: string): string => {
+    const line = /^lines\.(\d+)\.(\w+)$/.exec(path);
+    if (line) {
+      return tr('field.line.label', {
+        n: Number(line[1]) + 1,
+        field: tr(labelKey('line', line[2] ?? '')),
+      });
+    }
+    return tr(labelKey(kind, path));
   };
 
   const viewOf = (docId: string): View => {
@@ -134,7 +161,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
         if (hadError) render();
       },
       (error: unknown) => {
-        state.exportError = `Export failed: ${error instanceof Error ? error.message : String(error)}`;
+        state.exportError = error instanceof Error ? error.message : String(error);
         render();
       },
     );
@@ -145,6 +172,8 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     const focusKey = state.focusAfter ?? active?.dataset['focus'];
     state.focusAfter = null;
     const view = viewOf(state.docId);
+    document.documentElement.lang = state.lang;
+    document.title = tr('app.pageTitle');
     root.replaceChildren(header(), tabs(), workspace(view), footer());
     highlightSource(view);
     revealActiveTab();
@@ -174,22 +203,44 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
         { class: 'brand' },
         h('img', { class: 'brand-mark', src: logoUrl, alt: 'kokot.it' }),
         h('span', { class: 'brand-sep', 'aria-hidden': 'true' }, '/'),
-        h('h1', {}, 'Production docs agent'),
+        h('h1', {}, tr('app.title')),
       ),
-      h(
-        'p',
-        { class: 'tagline' },
-        'Orders and quality reports in, ERP records out — every uncertain field goes to a human.',
-      ),
+      h('p', { class: 'tagline' }, tr('app.tagline')),
       h(
         'span',
         {
           class: `mode mode-${LIVE ? 'live' : 'recorded'}`,
-          title: LIVE
-            ? 'Extractions call the Claude API from the local server.'
-            : 'Replays saved extractions. No API calls.',
+          title: tr(LIVE ? 'mode.live.hint' : 'mode.recorded.hint'),
         },
-        LIVE ? 'Live (Claude API)' : 'Recorded run',
+        tr(LIVE ? 'mode.live' : 'mode.recorded'),
+      ),
+      languageSwitch(),
+    );
+  }
+
+  function languageSwitch(): HTMLElement {
+    return h(
+      'div',
+      { class: 'lang-switch', role: 'group', 'aria-label': tr('lang.label') },
+      ...LANGS.map((lang) =>
+        h(
+          'button',
+          {
+            class: 'lang-option',
+            type: 'button',
+            lang,
+            'aria-pressed': lang === state.lang ? 'true' : 'false',
+            'data-focus': `lang:${lang}`,
+            title: lang === 'pl' ? 'Polski' : 'English',
+            onClick: () => {
+              if (state.lang === lang) return;
+              state.lang = lang;
+              options.onLangChange?.(lang);
+              render();
+            },
+          },
+          lang.toUpperCase(),
+        ),
       ),
     );
   }
@@ -197,7 +248,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
   function tabs(): HTMLElement {
     return h(
       'nav',
-      { class: 'doc-tabs', 'aria-label': 'Sample documents' },
+      { class: 'doc-tabs', 'aria-label': tr('tabs.label') },
       ...DOCUMENTS.map((d) => {
         const v = viewOf(d.id);
         const open = v.record.review.open_fields.length;
@@ -221,13 +272,13 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
             'span',
             { class: 'doc-tab-top' },
             h('span', { class: 'doc-id' }, d.id),
-            h('span', { class: 'doc-format' }, d.format === 'pdf' ? 'PDF' : 'e-mail'),
+            h('span', { class: 'doc-format' }, tr(`tabs.format.${d.format}`)),
           ),
-          h('span', { class: 'doc-tab-title' }, d.title),
+          h('span', { class: 'doc-tab-title' }, tr(docKey(d.id, 'title'))),
           h(
             'span',
             { class: `pill ${open ? 'pill-warn' : 'pill-ok'}` },
-            open ? `${open} to review` : 'ready',
+            open ? tr('tabs.toReview', { count: open }) : tr('tabs.ready'),
           ),
         );
       }),
@@ -243,7 +294,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     const original = `./documents/${doc.id}.${doc.format === 'pdf' ? 'pdf' : 'txt'}`;
     const paper = h('article', {
       class: `paper paper-${doc.format}`,
-      'aria-label': `Document ${doc.title}`,
+      'aria-label': tr('doc.aria', { title: tr(docKey(doc.id, 'title')) }),
     });
     // Safe: renderDocumentHtml escapes all document text.
     paper.innerHTML = renderDocumentHtml(documentText(doc.id));
@@ -256,13 +307,9 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
         h(
           'div',
           {},
-          h(
-            'p',
-            { class: 'eyebrow' },
-            doc.kind === 'purchase_order' ? 'Purchase order' : 'Quality report',
-          ),
-          h('h2', { id: 'doc-title' }, doc.title),
-          h('p', { class: 'scenario' }, doc.scenario),
+          h('p', { class: 'eyebrow' }, tr(`doc.kind.${doc.kind}`)),
+          h('h2', { id: 'doc-title' }, tr(docKey(doc.id, 'title'))),
+          h('p', { class: 'scenario' }, tr(docKey(doc.id, 'scenario'))),
         ),
         h(
           'div',
@@ -270,7 +317,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
           h(
             'a',
             { class: 'btn btn-ghost', href: original, target: '_blank', rel: 'noopener' },
-            doc.format === 'pdf' ? 'Open PDF' : 'Open e-mail',
+            tr(`doc.open.${doc.format}`),
           ),
           LIVE
             ? h(
@@ -282,12 +329,18 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
                   'data-focus': 'live',
                   onClick: () => void runLive(doc.id),
                 },
-                state.live.busy ? 'Extracting…' : 'Extract with Claude',
+                tr(state.live.busy ? 'doc.extracting' : 'doc.extract'),
               )
             : null,
         ),
       ),
-      state.live.error ? h('p', { class: 'alert', role: 'alert' }, state.live.error) : null,
+      state.live.error
+        ? h(
+            'p',
+            { class: 'alert', role: 'alert' },
+            tr('doc.liveFailed', { error: state.live.error }),
+          )
+        : null,
       paper,
     );
   }
@@ -298,8 +351,11 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     const decided = record.review.approved_fields.length + record.review.corrected_fields.length;
     const runInfo =
       run.source === 'live'
-        ? `Live run · ${run.model ?? 'unknown model'} · ${run.recorded_at ?? ''}`
-        : 'Recorded run · hand-authored to the extraction schema';
+        ? tr('data.run.live', {
+            model: run.model ?? tr('data.run.unknownModel'),
+            at: run.recorded_at ?? '',
+          })
+        : tr('data.run.recorded');
     return h(
       'section',
       { class: 'pane data-pane', 'aria-labelledby': 'data-title' },
@@ -309,26 +365,18 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
         h(
           'div',
           {},
-          h(
-            'p',
-            { class: 'eyebrow' },
-            record.record_type === 'sales_order' ? 'ERP · sales order' : 'ERP · quality inspection',
-          ),
-          h('h2', { id: 'data-title' }, 'Extracted record'),
+          h('p', { class: 'eyebrow' }, tr(`data.eyebrow.${record.record_type}`)),
+          h('h2', { id: 'data-title' }, tr('data.title')),
           h('p', { class: 'run-info' }, runInfo),
         ),
         h(
           'div',
           { class: `summary ${open ? 'summary-warn' : 'summary-ok'}`, 'aria-live': 'polite' },
           h('strong', {}, open ? String(open) : '✓'),
-          h(
-            'span',
-            {},
-            open
-              ? `field${open === 1 ? '' : 's'} need${open === 1 ? 's' : ''} review`
-              : 'ready for ERP',
-          ),
-          decided ? h('span', { class: 'summary-sub' }, `${decided} decided by you`) : null,
+          h('span', {}, open ? trPlural('data.summary.open', open) : tr('data.summary.ready')),
+          decided
+            ? h('span', { class: 'summary-sub' }, tr('data.summary.decided', { count: decided }))
+            : null,
         ),
       ),
       h('div', { class: 'fields' }, ...fieldGroups(view)),
@@ -342,20 +390,25 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     const row = (path: string) => {
       const f = byPath.get(path);
       const item = itemByPath.get(path);
-      return f && item ? fieldRow(f, item, view.items) : null;
+      return f && item ? fieldRow(f, item, view.items, view.run.kind) : null;
     };
     const header = view.fields.filter((f) => !f.path.startsWith('lines.')).map((f) => f.path);
     const groups = [
-      h('div', { class: 'group' }, h('h3', { class: 'group-title' }, 'Header'), ...header.map(row)),
+      h(
+        'div',
+        { class: 'group' },
+        h('h3', { class: 'group-title' }, tr('data.group.header')),
+        ...header.map(row),
+      ),
     ];
     if (view.run.kind === 'purchase_order') {
       view.run.extraction.lines.forEach((line, i) => {
-        const code = line.item_code.value ?? 'no item code';
+        const code = line.item_code.value ?? tr('data.group.noCode');
         groups.push(
           h(
             'div',
             { class: 'group group-line' },
-            h('h3', { class: 'group-title' }, `Line ${i + 1} · ${code}`),
+            h('h3', { class: 'group-title' }, tr('data.group.line', { n: i + 1, code })),
             ...['item_code', 'description', 'quantity', 'unit', 'unit_price'].map((k) =>
               row(`lines.${i}.${k}`),
             ),
@@ -372,26 +425,37 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     return String(value);
   }
 
-  function fieldRow(f: ResolvedField, item: ReviewItem, items: ReviewItem[]): HTMLElement {
+  function fieldRow(
+    f: ResolvedField,
+    item: ReviewItem,
+    items: ReviewItem[],
+    kind: Recording['kind'],
+  ): HTMLElement {
     const editing = state.editing === f.path;
     const shown = f.status === 'needs_review' ? f.proposed : f.value;
-    const short = f.label.replace(/^Line \d+ · /, '');
-    const label = short.charAt(0).toUpperCase() + short.slice(1);
+    const fullLabel = fieldLabel(kind, f.path);
+    const lineKey = /^lines\.\d+\.(\w+)$/.exec(f.path)?.[1];
+    // Inside a line group the "Line n ·" prefix is already in the group title.
+    const label = capitalize(lineKey ? tr(labelKey('line', lineKey)) : fullLabel);
     const conf = item.field.confidence;
     const children: (HTMLElement | null)[] = [
       h(
         'div',
         { class: 'field-head' },
         h('span', { class: 'field-label' }, label),
-        h('span', { class: `conf conf-${conf}`, title: 'Model confidence' }, conf),
-        h('span', { class: `status status-${f.status}` }, STATUS_LABEL[f.status]),
+        h(
+          'span',
+          { class: `conf conf-${conf}`, title: tr('field.confidence') },
+          tr(`conf.${conf}`),
+        ),
+        h('span', { class: `status status-${f.status}` }, statusLabel(f.status)),
       ),
       h(
         'div',
         { class: 'field-value' },
         h('span', { class: shown === null ? 'value value-empty' : 'value' }, display(f, shown)),
         f.status === 'corrected'
-          ? h('span', { class: 'was' }, `model: ${display(f, f.proposed)}`)
+          ? h('span', { class: 'was' }, tr('field.was', { value: display(f, f.proposed) }))
           : null,
       ),
     ];
@@ -404,8 +468,8 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
             h(
               'li',
               { class: `issue issue-${i.code}` },
-              h('span', { class: 'issue-code' }, ISSUE_LABEL[i.code]),
-              h('span', {}, i.message),
+              h('span', { class: 'issue-code' }, tr(`issueCode.${i.code}`)),
+              h('span', {}, format(state.lang, i.msg)),
             ),
           ),
         ),
@@ -416,9 +480,9 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
         class: 'input',
         type: 'text',
         value: state.editDraft ?? (shown === null ? '' : String(shown)),
-        'aria-label': `Correct ${f.label}`,
+        'aria-label': tr('field.correctAria', { label: fullLabel }),
         'data-focus': `input:${f.path}`,
-        placeholder: f.type === 'date' ? 'YYYY-MM-DD' : '',
+        placeholder: f.type === 'date' ? tr('field.datePlaceholder') : '',
       }) as HTMLInputElement;
       const save = () => {
         const decision: Decision = { action: 'correct', value: input.value };
@@ -440,7 +504,11 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
           'div',
           { class: 'editor' },
           input,
-          h('button', { class: 'btn btn-primary', type: 'button', onClick: save }, 'Save'),
+          h(
+            'button',
+            { class: 'btn btn-primary', type: 'button', onClick: save },
+            tr('action.save'),
+          ),
           h(
             'button',
             {
@@ -448,10 +516,12 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
               type: 'button',
               onClick: () => closeEditor(f.path),
             },
-            'Cancel',
+            tr('action.cancel'),
           ),
         ),
-        state.editError ? h('p', { class: 'edit-error', role: 'alert' }, state.editError) : null,
+        state.editError
+          ? h('p', { class: 'edit-error', role: 'alert' }, format(state.lang, state.editError))
+          : null,
       );
       queueMicrotask(() => {
         if (document.activeElement === document.body) input.focus();
@@ -471,7 +541,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
               'data-focus': `approve:${f.path}`,
               onClick: () => decide(f.path, { action: 'approve' }),
             },
-            'Approve',
+            tr('action.approve'),
           ),
         );
       }
@@ -492,7 +562,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
                 render();
               },
             },
-            f.status === 'needs_review' ? 'Correct…' : 'Edit',
+            tr(f.status === 'needs_review' ? 'action.correct' : 'action.edit'),
           ),
         );
       }
@@ -506,7 +576,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
               'data-focus': `undo:${f.path}`,
               onClick: () => decide(f.path, null),
             },
-            'Undo',
+            tr('action.undo'),
           ),
         );
       }
@@ -525,7 +595,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
           .join(' '),
         'data-path': f.path,
         role: 'group',
-        'aria-label': `${f.label}: ${STATUS_LABEL[f.status]}`,
+        'aria-label': tr('field.aria', { label: fullLabel, status: statusLabel(f.status) }),
         // Focusable so keyboard users can select a field and see its source highlighted.
         tabindex: '0',
         'data-focus': `field:${f.path}`,
@@ -597,7 +667,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
             'data-focus': 'csv',
             onClick: () => runExport(() => exportCsv(view)),
           },
-          'Export CSV',
+          tr('export.csv'),
         ),
         h(
           'button',
@@ -607,16 +677,20 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
             'data-focus': 'xlsx',
             onClick: () => runExport(exportXlsx),
           },
-          'Export XLSX (all documents)',
+          tr('export.xlsx'),
         ),
       ),
-      state.exportError ? h('p', { class: 'alert', role: 'alert' }, state.exportError) : null,
+      state.exportError
+        ? h(
+            'p',
+            { class: 'alert', role: 'alert' },
+            tr('export.failed', { error: state.exportError }),
+          )
+        : null,
       h(
         'p',
         { class: 'export-note' },
-        open
-          ? `${open} open field${open === 1 ? ' is' : 's are'} exported empty and listed in open_fields — nothing unreviewed reaches the ERP.`
-          : `All ${fields.length} fields resolved.`,
+        open ? trPlural('export.open', open) : tr('export.allResolved', { count: fields.length }),
       ),
       h(
         'details',
@@ -627,7 +701,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
             state.jsonOpen = (e.currentTarget as HTMLDetailsElement).open;
           },
         },
-        h('summary', {}, 'ERP record (JSON)'),
+        h('summary', {}, tr('export.json')),
         h('pre', {}, h('code', {}, json)),
       ),
     );
@@ -669,7 +743,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     } catch (error) {
       state.live = {
         busy: false,
-        error: `Live extraction failed: ${error instanceof Error ? error.message : String(error)}`,
+        error: error instanceof Error ? error.message : String(error),
       };
     }
     render();
@@ -679,7 +753,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     return h(
       'footer',
       { class: 'foot' },
-      h('p', { class: 'foot-note' }, 'Sample data · fictional companies'),
+      h('p', { class: 'foot-note' }, tr('foot.note')),
       h(
         'a',
         { class: 'by', href: 'https://kokot.it', target: '_blank', rel: 'noopener' },

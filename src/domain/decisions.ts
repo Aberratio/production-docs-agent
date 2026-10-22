@@ -1,11 +1,14 @@
 import {
   crossFieldIssues,
   formatProblem,
+  issue,
   LINES_PLACEHOLDER,
+  msg,
   type FieldType,
   type Issue,
   type ReviewItem,
 } from './review.ts';
+import type { Msg } from '../i18n/index.ts';
 
 /** What a human did with one field in the review panel. */
 export type Decision = { action: 'approve' } | { action: 'correct'; value: string };
@@ -27,7 +30,7 @@ export interface ResolvedField {
   issues: Issue[];
 }
 
-export type ParseResult = { ok: true; value: string | number } | { ok: false; error: string };
+export type ParseResult = { ok: true; value: string | number } | { ok: false; error: Msg };
 
 /** Parses a human-typed amount, accepting Polish "1 234,50" and plain "1234.5". */
 function parseNumber(input: string): number | null {
@@ -41,7 +44,7 @@ export function parseCorrection(type: FieldType, input: string, unit?: unknown):
   let value: string | number | null;
   if (type === 'money' || type === 'quantity' || type === 'count') {
     value = parseNumber(input);
-    if (value === null) return { ok: false, error: 'Enter a number, e.g. 1 234,50.' };
+    if (value === null) return { ok: false, error: msg('rule.number') };
   } else {
     value = input.trim();
   }
@@ -65,13 +68,11 @@ export function validateDecision(
   decision: Decision,
   items: readonly ReviewItem[] = [item],
   decisions: Decisions = {},
-): string | null {
-  if (item.path === LINES_PLACEHOLDER) {
-    return 'Order lines cannot be typed in here — fix the document or add them in the ERP.';
-  }
+): Msg | null {
+  if (item.path === LINES_PLACEHOLDER) return msg('decision.linesPlaceholder');
   const unit = unitFor(items, item.path, decisions);
   if (decision.action === 'approve') {
-    if (item.field.value === null) return 'Nothing to approve — enter the correct value.';
+    if (item.field.value === null) return msg('decision.nothingToApprove');
     return formatProblem(item.type, item.field.value, unit);
   }
   const parsed = parseCorrection(item.type, decision.value, unit);
@@ -115,7 +116,7 @@ export function resolveFields(items: readonly ReviewItem[], decisions: Decisions
   for (const field of resolved) {
     if (field.type !== 'quantity' || field.value === null || field.status === 'corrected') continue;
     const problem = formatProblem('quantity', field.value, unitFor(items, field.path, decisions));
-    if (problem) reopen(field, { code: 'invalid', message: problem });
+    if (problem) reopen(field, issue('invalid', problem));
   }
   for (const { path, issue } of crossFieldIssues([...byPath.keys()], (p) => byPath.get(p)?.value)) {
     const field = byPath.get(path);
