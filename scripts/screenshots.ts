@@ -16,7 +16,7 @@ async function main(): Promise<void> {
   if (!base) throw new Error('Preview server did not report a URL.');
   const browser = await chromium.launch();
   try {
-    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     const open = async (query: string) => {
       await page.goto(`${base}?${query}`);
       await page.waitForSelector('.field');
@@ -51,11 +51,16 @@ async function main(): Promise<void> {
     await page.waitForTimeout(400);
     await page.screenshot({ path: `${OUT}/human-decisions-po-002.png` });
 
-    const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    const mobile = await browser.newPage({ viewport: { width: 375, height: 812 } });
     await mobile.goto(`${base}?embed=1&doc=po-003`);
     await mobile.waitForSelector('.field');
     await mobile.evaluate(() => document.fonts.ready);
     await mobile.screenshot({ path: `${OUT}/embed-mobile-po-003.png` });
+
+    await mobile.goto(`${base}?doc=po-002`);
+    await mobile.waitForSelector('.field');
+    await mobile.evaluate(() => document.fonts.ready);
+    await mobile.screenshot({ path: `${OUT}/mobile-po-002.png` });
 
     console.info(`screenshots written to ${OUT}/`);
   } finally {
