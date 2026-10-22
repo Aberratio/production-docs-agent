@@ -7,9 +7,9 @@
   "recorded_at": null,
   "extraction": {
     "order_number": {
-      "value": "DM-7781",
+      "value": "TM-7781",
       "confidence": "high",
-      "source_text": "zamówienia nr DM-7781",
+      "source_text": "zamówienia nr TM-7781",
       "note": null
     },
     "order_date": {
