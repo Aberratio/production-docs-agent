@@ -139,7 +139,7 @@ recordings/*.json ◄──────┘ (npm run record)        recorded mode
  domain/decisions.ts   human approve / correct → resolved values (flagged + undecided = null)
  domain/mapping.ts     resolved values → ERP records (JSON) → sheet rows
  domain/export.ts      CSV (RFC 4180, formula-injection safe) and XLSX (SheetJS)
- ui/                   vanilla TS + DOM; styles/tokens.css holds every brand value
+ ui/                   vanilla TS + DOM; styles/tokens.css + fonts.css = kokot.it brand
  live/                 request builder, extractor, /api/extract handler, Vite plugin (Node only)
 ```
 
@@ -185,10 +185,18 @@ Deploy `dist/` under any path (it uses relative URLs), then:
 
 `allow-downloads` is needed for the CSV/XLSX export, `allow-popups` for "Open PDF". The height
 message uses target origin `*` (it carries only a pixel height); tighten it to the site's origin
-when the case-study page exists. Fonts come
-from Google Fonts; all colours, fonts and spacing are CSS custom properties in
-[`src/styles/tokens.css`](src/styles/tokens.css), so the site's brand can replace them in one
-file.
+when the case-study page exists.
+
+### Brand
+
+The look is the kokot.it brand: [`src/styles/tokens.css`](src/styles/tokens.css) and
+[`src/styles/fonts.css`](src/styles/fonts.css) are copied verbatim from the kokot-it repo
+(`origin/next`), with this app's few extra tokens appended at the end of `tokens.css`. Schibsted
+Grotesk and JetBrains Mono are self-hosted from [`src/assets/fonts/`](src/assets/fonts) (SIL Open
+Font License, licence files next to the fonts) — no third-party font requests, so visitors' IPs
+go nowhere. The logo is `src/assets/brand/logo.svg`. To update the brand, copy those files again;
+`tests/tokens.test.ts` checks the brand values, that fonts are self-hosted, that no other
+stylesheet hard-codes colours or type, and WCAG AA contrast for every colour pairing the UI uses.
 
 ## Limitations
 
@@ -210,6 +218,4 @@ file.
 - An explicit approval stands even if a later correction elsewhere contradicts it.
 - A contradiction stated only in prose (po-004's remark "łącznie 1 000 szt." against 1200 in the
   table) is caught only if the model reports it; the deterministic rules cover fields, not prose.
-- Fonts load from Google Fonts, which sees each visitor's IP; self-host them for a privacy-strict
-  deployment.
 - Regenerated PDFs are not byte-identical (Chromium stamps a creation date); their text is.
