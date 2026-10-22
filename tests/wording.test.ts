@@ -12,14 +12,18 @@ describe('wording guard', () => {
     'zakupy@demo-maszyny.example',
     'const isDemo = true',
     'prezentacja demo',
+    'demographic data',
+    'Demographics',
+    'demotest',
+    'the demoted build',
+    'predemo',
   ])('flags %j', (text) => {
     expect(findForbiddenWording(text)).toHaveLength(1);
   });
 
   it.each([
-    'demographic data',
-    'Demographics',
     '`DEMOTE`,204:`SHOW.DETAIL`',
+    'demote',
     'O(`$ZodEmoji`,(e,t)=>{})',
     'Recorded run · Sample data · fictional companies',
   ])('allows %j', (text) => {

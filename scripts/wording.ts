@@ -5,8 +5,11 @@
  */
 const FORBIDDEN = /demo/gi;
 
-/** Words that start with the letters but mean something else ("demote" is an Excel function). */
-const ALLOWED_FROM_MATCH = /^demo(graph|t)/i;
+/**
+ * Whole words that contain the letters but mean something else. Only DEMOTE, the Excel function
+ * name in the bundled spreadsheet library; add a word here only when it actually ships.
+ */
+const ALLOWED_WORDS = new Set(['demote']);
 
 /** Identifiers that only contain the letters, e.g. zod's `ZodEmoji` in the bundled JavaScript. */
 const ALLOWED_TOKEN = /dEmoji/;
@@ -25,10 +28,8 @@ export function findForbiddenWording(text: string): WordingHit[] {
     while (start > 0 && isWord(start - 1)) start--;
     let end = at + match[0].length;
     while (end < text.length && isWord(end)) end++;
-    if (
-      ALLOWED_FROM_MATCH.test(text.slice(at, end)) ||
-      ALLOWED_TOKEN.test(text.slice(start, end))
-    ) {
+    const word = text.slice(start, end);
+    if (ALLOWED_WORDS.has(word.toLowerCase()) || ALLOWED_TOKEN.test(word)) {
       continue;
     }
     hits.push({
