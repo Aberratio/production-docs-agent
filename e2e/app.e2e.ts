@@ -153,19 +153,25 @@ describe('review flow (recorded mode)', () => {
     expect(errors).toEqual([]);
   });
 
-  it('hides the header and footer when embedded', async () => {
+  it('hides the header when embedded but keeps the sample-data note', async () => {
     await page.goto(`${base}?embed=1&doc=qr-002`);
     await expect
       .poll(() => field('Decision').getAttribute('aria-label'))
       .toBe('Decision: needs review');
     expect(await page.locator('.topbar').isVisible()).toBe(false);
-    expect(await page.locator('.foot').isVisible()).toBe(false);
+    expect(await page.locator('.foot').textContent()).toContain('Sample data');
   });
 
-  it('shows the header outside the embed', async () => {
+  it('shows the header, mode and footer outside the embed', async () => {
     await page.goto(`${base}?doc=po-001`);
     await expect.poll(() => page.locator('.topbar').isVisible()).toBe(true);
+    expect(await page.locator('.mode').textContent()).toBe('Recorded run');
     expect(await page.locator('.summary').textContent()).toContain('ready for ERP');
+    const credit = page.getByRole('link', { name: '© 2026 kokot.it' });
+    expect(await credit.getAttribute('href')).toBe('https://kokot.it');
+    expect(await page.locator('.foot').textContent()).toContain(
+      'Sample data · fictional companies',
+    );
   });
 });
 
@@ -174,7 +180,7 @@ describe('embedding on another site (the README snippet)', () => {
   const readme = readFileSync('README.md', 'utf8');
   const sandbox = /<iframe[\s\S]*?sandbox="([^"]+)"/.exec(readme)?.[1];
   // The host page is served by a real local server on another origin (127.0.0.1 vs localhost),
-  // like kokot.it framing /demos/…: a routed fake page counts as a public origin to Chromium's
+  // like kokot.it framing the app under a sub-path: a routed fake page counts as a public origin to Chromium's
   // Local Network Access check, which would block the frame before the CORS behaviour under test.
   let hostServer: Server;
   let hostUrl: string;
@@ -184,7 +190,7 @@ describe('embedding on another site (the README snippet)', () => {
     hostServer = createServer((_req, res) => {
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.end(`<!doctype html><html><body>
-        <iframe id="demo" src="${base}?embed=1&doc=po-002" title="Production docs agent — demo"
+        <iframe id="app-frame" src="${base}?embed=1&doc=po-002" title="Production docs agent"
           style="width:1000px;height:600px;border:0" sandbox="${sandboxAttr}"></iframe>
         <script>
           window.heights = [];
@@ -199,11 +205,11 @@ describe('embedding on another site (the README snippet)', () => {
 
   afterAll(() => new Promise<void>((resolve) => hostServer.close(() => resolve())));
 
-  /** Opens the host page, which embeds the built demo with the given sandbox attribute. */
+  /** Opens the host page, which embeds the built app with the given sandbox attribute. */
   async function embedOnHost(sandboxValue: string) {
     sandboxAttr = sandboxValue;
     await page.goto(hostUrl);
-    return page.frameLocator('#demo');
+    return page.frameLocator('#app-frame');
   }
 
   it('stays empty without allow-same-origin (the bug the README snippet must avoid)', async () => {
@@ -213,7 +219,7 @@ describe('embedding on another site (the README snippet)', () => {
     expect(errors.join(' | ')).toMatch(/from origin 'null' has been blocked by CORS/);
   });
 
-  it('renders the demo inside an iframe with the documented sandbox', async () => {
+  it('renders the app inside an iframe with the documented sandbox', async () => {
     expect(sandbox).toBeDefined();
     const frame = await embedOnHost(sandbox!);
     await expect
@@ -234,7 +240,7 @@ describe('embedding on another site (the README snippet)', () => {
 
   it('documents a sandbox that keeps the frame same-origin with its own assets', () => {
     // Without allow-same-origin the frame's origin is "null" and Vite's crossorigin assets are
-    // blocked by CORS: the frame stays empty (reproduced in the fresh-session review).
+    // blocked by CORS: the frame stays empty (reproduced in a browser).
     expect(sandbox?.split(/\s+/)).toEqual(
       expect.arrayContaining([
         'allow-scripts',

@@ -1,4 +1,4 @@
-import { DOCUMENTS, findDocument, type DemoDocument } from '../documents/catalog.ts';
+import { DOCUMENTS, findDocument, type SampleDocument } from '../documents/catalog.ts';
 import { documentText, recordedRun } from '../documents/browser.ts';
 import { renderDocumentHtml } from '../documents/render.ts';
 import {
@@ -47,7 +47,7 @@ interface State {
 }
 
 interface View {
-  doc: DemoDocument;
+  doc: SampleDocument;
   run: Recording;
   items: ReviewItem[];
   fields: ResolvedField[];
@@ -183,8 +183,13 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
       ),
       h(
         'span',
-        { class: `mode mode-${LIVE ? 'live' : 'recorded'}` },
-        LIVE ? 'Live · Claude API' : 'Recorded runs · no API calls',
+        {
+          class: `mode mode-${LIVE ? 'live' : 'recorded'}`,
+          title: LIVE
+            ? 'Extractions call the Claude API from the local server.'
+            : 'Replays saved extractions. No API calls.',
+        },
+        LIVE ? 'Live (Claude API)' : 'Recorded run',
       ),
     );
   }
@@ -192,7 +197,7 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
   function tabs(): HTMLElement {
     return h(
       'nav',
-      { class: 'doc-tabs', 'aria-label': 'Demo documents' },
+      { class: 'doc-tabs', 'aria-label': 'Sample documents' },
       ...DOCUMENTS.map((d) => {
         const v = viewOf(d.id);
         const open = v.record.review.open_fields.length;
@@ -370,7 +375,8 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
   function fieldRow(f: ResolvedField, item: ReviewItem, items: ReviewItem[]): HTMLElement {
     const editing = state.editing === f.path;
     const shown = f.status === 'needs_review' ? f.proposed : f.value;
-    const label = f.label.replace(/^Line \d+ · /, '');
+    const short = f.label.replace(/^Line \d+ · /, '');
+    const label = short.charAt(0).toUpperCase() + short.slice(1);
     const conf = item.field.confidence;
     const children: (HTMLElement | null)[] = [
       h(
@@ -673,18 +679,11 @@ export function startApp(root: HTMLElement, initialDocId: string | null): void {
     return h(
       'footer',
       { class: 'foot' },
-      h(
-        'p',
-        {},
-        'All documents, companies and people are fictional. Recorded runs replay deterministically; run ',
-        h('code', {}, 'npm run dev:live'),
-        ' with your own key to call Claude.',
-      ),
+      h('p', { class: 'foot-note' }, 'Sample data · fictional companies'),
       h(
         'a',
         { class: 'by', href: 'https://kokot.it', target: '_blank', rel: 'noopener' },
-        h('span', {}, 'by'),
-        h('img', { src: logoUrl, alt: 'kokot.it' }),
+        '© 2026 kokot.it',
       ),
     );
   }
