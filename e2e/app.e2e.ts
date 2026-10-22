@@ -3,6 +3,8 @@
  * goes through, the export, and the embed switch. Run with `npm run test:e2e` (builds first).
  */
 import { readdirSync, readFileSync } from 'node:fs';
+import { createServer, type Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { join } from 'node:path';
 import * as XLSX from 'xlsx';
 import { chromium, type Browser, type Page } from 'playwright';
@@ -164,5 +166,82 @@ describe('review flow (recorded mode)', () => {
     await page.goto(`${base}?doc=po-001`);
     await expect.poll(() => page.locator('.topbar').isVisible()).toBe(true);
     expect(await page.locator('.summary').textContent()).toContain('ready for ERP');
+  });
+});
+
+describe('embedding on another site (the README snippet)', () => {
+  // The exact sandbox attribute the README tells kokot.it to use — docs and test cannot drift.
+  const readme = readFileSync('README.md', 'utf8');
+  const sandbox = /<iframe[\s\S]*?sandbox="([^"]+)"/.exec(readme)?.[1];
+  // The host page is served by a real local server on another origin (127.0.0.1 vs localhost),
+  // like kokot.it framing /demos/…: a routed fake page counts as a public origin to Chromium's
+  // Local Network Access check, which would block the frame before the CORS behaviour under test.
+  let hostServer: Server;
+  let hostUrl: string;
+  let sandboxAttr = '';
+
+  beforeAll(async () => {
+    hostServer = createServer((_req, res) => {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.end(`<!doctype html><html><body>
+        <iframe id="demo" src="${base}?embed=1&doc=po-002" title="Production docs agent — demo"
+          style="width:1000px;height:600px;border:0" sandbox="${sandboxAttr}"></iframe>
+        <script>
+          window.heights = [];
+          addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'production-docs-agent:height') window.heights.push(e.data.height);
+          });
+        </script></body></html>`);
+    });
+    await new Promise<void>((resolve) => hostServer.listen(0, '127.0.0.1', resolve));
+    hostUrl = `http://127.0.0.1:${(hostServer.address() as AddressInfo).port}/case-study`;
+  });
+
+  afterAll(() => new Promise<void>((resolve) => hostServer.close(() => resolve())));
+
+  /** Opens the host page, which embeds the built demo with the given sandbox attribute. */
+  async function embedOnHost(sandboxValue: string) {
+    sandboxAttr = sandboxValue;
+    await page.goto(hostUrl);
+    return page.frameLocator('#demo');
+  }
+
+  it('stays empty without allow-same-origin (the bug the README snippet must avoid)', async () => {
+    const frame = await embedOnHost('allow-scripts allow-downloads allow-popups');
+    await page.waitForTimeout(1500);
+    expect(await frame.locator('.field').count()).toBe(0);
+    expect(errors.join(' | ')).toMatch(/from origin 'null' has been blocked by CORS/);
+  });
+
+  it('renders the demo inside an iframe with the documented sandbox', async () => {
+    expect(sandbox).toBeDefined();
+    const frame = await embedOnHost(sandbox!);
+    await expect
+      .poll(() => frame.getByRole('group', { name: /^Delivery date:/ }).getAttribute('aria-label'))
+      .toBe('Delivery date: needs review');
+    expect(await frame.locator('.topbar').count()).toBe(1);
+    expect(await frame.locator('.topbar').isVisible()).toBe(false);
+  });
+
+  it('reports its content height to the host page', async () => {
+    await embedOnHost(sandbox!);
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { heights: number[] }).heights.length))
+      .toBeGreaterThan(0);
+    const heights = await page.evaluate(() => (window as unknown as { heights: number[] }).heights);
+    expect(Math.max(...heights)).toBeGreaterThan(300);
+  });
+
+  it('documents a sandbox that keeps the frame same-origin with its own assets', () => {
+    // Without allow-same-origin the frame's origin is "null" and Vite's crossorigin assets are
+    // blocked by CORS: the frame stays empty (reproduced in the fresh-session review).
+    expect(sandbox?.split(/\s+/)).toEqual(
+      expect.arrayContaining([
+        'allow-scripts',
+        'allow-same-origin',
+        'allow-downloads',
+        'allow-popups',
+      ]),
+    );
   });
 });
