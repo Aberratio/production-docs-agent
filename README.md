@@ -169,13 +169,13 @@ Deploy `dist/` under any path (it uses relative URLs), then:
   src="/demos/production-docs-agent/?embed=1&doc=po-002"
   title="Production docs agent — demo"
   style="width: 100%; height: 900px; border: 0"
-  sandbox="allow-scripts allow-downloads allow-popups"
+  sandbox="allow-scripts allow-same-origin allow-downloads allow-popups"
   loading="lazy"
 ></iframe>
 <script>
   // Optional: size the iframe to its content.
   addEventListener('message', (e) => {
-    if (e.data?.type === 'production-docs-agent:height') {
+    if (e.origin === location.origin && e.data?.type === 'production-docs-agent:height') {
       document.querySelector('iframe[title^="Production docs agent"]').style.height =
         `${e.data.height}px`;
     }
@@ -183,9 +183,18 @@ Deploy `dist/` under any path (it uses relative URLs), then:
 </script>
 ```
 
-`allow-downloads` is needed for the CSV/XLSX export, `allow-popups` for "Open PDF". The height
-message uses target origin `*` (it carries only a pixel height); tighten it to the site's origin
-when the case-study page exists.
+Why each sandbox token:
+
+- `allow-scripts` — the demo is a script app;
+- `allow-same-origin` — **required**: without it the frame's origin is `null` and the browser
+  blocks Vite's `crossorigin` script and stylesheet by CORS, leaving an empty frame. It is safe
+  here because the demo is our own code served from the same host (`/demos/production-docs-agent/`);
+- `allow-downloads` — CSV/XLSX export; `allow-popups` — "Open PDF".
+
+The demo posts its height only to the parent's origin (from `location.ancestorOrigins` or the
+referrer; `*` as a last resort, since the message is just a number), and the snippet above
+accepts it only from its own origin. `e2e/app.e2e.ts` embeds the built demo with exactly this
+sandbox attribute (read from this README) and checks that it renders and reports its height.
 
 ### Brand
 
