@@ -12,7 +12,7 @@ body {
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: var(--text-base);
-  line-height: var(--leading);
+  line-height: var(--leading-normal);
 }
 
 #app {
@@ -56,9 +56,10 @@ pre {
 }
 
 .brand-mark {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  color: var(--color-accent);
+  display: block;
+  height: var(--text-lg);
+  width: auto;
+  align-self: center;
 }
 
 .brand-sep {
@@ -68,7 +69,7 @@ pre {
 .brand h1 {
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-tight);
+  letter-spacing: var(--tracking-heading);
 }
 
 .tagline {
@@ -82,7 +83,7 @@ pre {
   font-size: var(--text-xs);
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-pill);
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--color-line-strong);
   color: var(--color-text-muted);
 }
 
@@ -105,7 +106,7 @@ pre {
   gap: var(--space-1);
   padding: var(--space-2) var(--space-3);
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   color: var(--color-text);
   font: inherit;
@@ -114,12 +115,12 @@ pre {
 }
 
 .doc-tab:hover {
-  border-color: var(--color-border-strong);
+  border-color: var(--color-line-strong);
 }
 
 .doc-tab[aria-current='true'] {
   border-color: var(--color-accent);
-  background: var(--color-surface-2);
+  background: var(--color-surface-raised);
 }
 
 .doc-tab-top {
@@ -134,7 +135,7 @@ pre {
 .doc-tab-title {
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
-  line-height: var(--leading-tight);
+  line-height: var(--leading-snug);
 }
 
 .pill {
@@ -145,8 +146,8 @@ pre {
 }
 
 .pill-ok {
-  color: var(--color-accent);
-  background: var(--color-accent-soft);
+  color: var(--color-success);
+  background: var(--color-success-soft);
 }
 
 .pill-warn {
@@ -164,7 +165,7 @@ pre {
 
 .pane {
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   display: flex;
@@ -196,8 +197,8 @@ pre {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   text-transform: uppercase;
-  letter-spacing: var(--tracking-caps);
-  color: var(--color-accent);
+  letter-spacing: var(--tracking-label);
+  color: var(--color-accent-2);
 }
 
 .scenario,
@@ -218,7 +219,7 @@ pre {
   font-feature-settings: 'calt' 0;
   overflow: auto;
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   padding: var(--space-5);
   font-size: var(--text-sm);
@@ -233,7 +234,7 @@ pre {
   font-weight: var(--weight-bold);
   padding-bottom: var(--space-2);
   margin-bottom: var(--space-3);
-  border-bottom: 2px solid var(--color-border-strong);
+  border-bottom: 2px solid var(--color-line-strong);
 }
 
 .paper p {
@@ -249,13 +250,13 @@ pre {
 
 .paper th,
 .paper td {
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--color-line-strong);
   padding: var(--space-1) var(--space-2);
   text-align: left;
 }
 
 .paper th {
-  background: var(--color-surface-2);
+  background: var(--color-surface-raised);
 }
 
 .paper .hl {
@@ -295,8 +296,8 @@ pre {
 }
 
 .summary-ok {
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
+  background: var(--color-success-soft);
+  color: var(--color-success);
 }
 
 .fields {
@@ -317,7 +318,7 @@ pre {
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
   text-transform: uppercase;
-  letter-spacing: var(--tracking-caps);
+  letter-spacing: var(--tracking-label);
   color: var(--color-text-muted);
 }
 
@@ -326,9 +327,9 @@ pre {
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-2) var(--space-3);
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  border-left: 3px solid var(--color-border-strong);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-line);
+  border-left: 3px solid var(--color-line-strong);
   border-radius: var(--radius-md);
   cursor: pointer;
 }
@@ -344,11 +345,11 @@ pre {
 
 .field-approved,
 .field-corrected {
-  border-left-color: var(--color-accent);
+  border-left-color: var(--color-success);
 }
 
 .field.is-selected {
-  box-shadow: 0 0 0 1px var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-focus);
 }
 
 .field-head {
@@ -374,7 +375,7 @@ pre {
 
 .conf {
   color: var(--color-text-muted);
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--color-line-strong);
 }
 
 .conf-medium,
@@ -393,7 +394,7 @@ pre {
 
 .status-approved,
 .status-corrected {
-  color: var(--color-accent);
+  color: var(--color-success);
 }
 
 .field-value {
@@ -528,8 +529,8 @@ pre {
 
 .btn-approve {
   background: transparent;
-  color: var(--color-accent);
-  border-color: var(--color-accent);
+  color: var(--color-success);
+  border-color: var(--color-success);
 }
 
 .btn-ghost {
@@ -554,7 +555,7 @@ pre {
   flex-direction: column;
   gap: var(--space-2);
   padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-line);
 }
 
 .export-actions {
@@ -579,14 +580,36 @@ pre {
   overflow: auto;
   padding: var(--space-3);
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   font-size: var(--text-xs);
 }
 
 .foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
   color: var(--color-text-muted);
   font-size: var(--text-xs);
+}
+
+.by {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.by img {
+  height: var(--text-base);
+  width: auto;
+}
+
+.by:hover {
+  color: var(--color-text);
 }
 
 .foot code {
