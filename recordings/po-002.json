@@ -19,15 +19,15 @@
       "note": "No order date in the text; this is the date the e-mail was sent."
     },
     "customer_name": {
-      "value": "Demo Maszyny S.A.",
+      "value": "Testowe Maszyny S.A.",
       "confidence": "high",
-      "source_text": "Dział Zakupów, Demo Maszyny S.A.",
+      "source_text": "Dział Zakupów, Testowe Maszyny S.A.",
       "note": null
     },
     "contact_person": {
       "value": "Anna Testowa",
       "confidence": "high",
-      "source_text": "Anna Testowa <zakupy@demo-maszyny.example>",
+      "source_text": "Anna Testowa <zakupy@testowe-maszyny.example>",
       "note": null
     },
     "delivery_date": {

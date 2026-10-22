@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { findDocument, type DemoDocument } from '../documents/catalog.ts';
+import { findDocument, type SampleDocument } from '../documents/catalog.ts';
 import { PDF_DIR, readDocumentText } from '../documents/node-io.ts';
 import type { Recording } from '../domain/recording.ts';
 import {
@@ -11,8 +11,8 @@ import {
   type ParseClient,
 } from './extract.ts';
 
-/** Reads what the model gets for a demo document: the PDF bytes, or the e-mail text. */
-export function loadExtractionInput(doc: DemoDocument): ExtractionInput {
+/** Reads what the model gets for a sample document: the PDF bytes, or the e-mail text. */
+export function loadExtractionInput(doc: SampleDocument): ExtractionInput {
   return doc.format === 'pdf'
     ? { pdfBase64: readFileSync(join(PDF_DIR, `${doc.id}.pdf`)).toString('base64') }
     : { text: readDocumentText(doc.id) };
@@ -20,7 +20,7 @@ export function loadExtractionInput(doc: DemoDocument): ExtractionInput {
 
 export async function extractToRecording(
   client: ParseClient,
-  doc: DemoDocument,
+  doc: SampleDocument,
   now: () => Date,
   model?: string,
 ): Promise<Recording> {
@@ -74,7 +74,7 @@ export function createExtractHandler(options: HandlerOptions) {
       return { status: 400, body: { error: 'Expected JSON: {"documentId": "po-001"}.' } };
     }
     const doc = typeof documentId === 'string' ? findDocument(documentId) : undefined;
-    if (!doc) return { status: 404, body: { error: 'Unknown demo document.' } };
+    if (!doc) return { status: 404, body: { error: 'Unknown document.' } };
     if (!options.apiKey) {
       return {
         status: 503,

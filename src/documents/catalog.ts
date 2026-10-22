@@ -2,21 +2,21 @@ import type { DocumentKind } from '../domain/schema.ts';
 
 export type DocumentFormat = 'pdf' | 'email';
 
-export interface DemoDocument {
+export interface SampleDocument {
   id: string;
   kind: DocumentKind;
   format: DocumentFormat;
   title: string;
-  /** What makes this document interesting for the demo (shown in the UI). */
+  /** What this document exercises (shown in the UI). */
   scenario: string;
 }
 
 /**
- * The fictional demo corpus. Every company, person, address and number is invented; domains use
+ * The fictional sample corpus. Every company, person, address and number is invented; domains use
  * the reserved `.example` TLD. Source text lives in `documents/<id>.txt`; PDFs are generated from
  * it by `npm run docs:generate` into `public/documents/<id>.pdf`.
  */
-export const DOCUMENTS: readonly DemoDocument[] = [
+export const DOCUMENTS: readonly SampleDocument[] = [
   {
     id: 'po-001',
     kind: 'purchase_order',
@@ -75,6 +75,6 @@ export const DOCUMENTS: readonly DemoDocument[] = [
   },
 ];
 
-export function findDocument(id: string): DemoDocument | undefined {
+export function findDocument(id: string): SampleDocument | undefined {
   return DOCUMENTS.find((d) => d.id === id);
 }

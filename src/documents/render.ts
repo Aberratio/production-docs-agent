@@ -1,5 +1,5 @@
 /**
- * Renders a demo document's source text as HTML. The same markup feeds the generated PDFs and the
+ * Renders a sample document's source text as HTML. The same markup feeds the generated PDFs and the
  * document pane in the UI, so what the reviewer reads is what the model was given.
  *
  * Syntax: `# ` starts the heading, lines starting with `|` form a table (first row = header),

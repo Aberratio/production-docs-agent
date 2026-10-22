@@ -1,8 +1,8 @@
 import { parseRecording, type Recording } from '../domain/recording.ts';
 
 /**
- * Demo data bundled into the static build: document texts and recorded runs. Nothing is fetched
- * at runtime, so the recorded demo works from any static host or inside an iframe.
+ * Sample data bundled into the static build: document texts and recorded runs. Nothing is fetched
+ * at runtime, so the recorded run works from any static host or inside an iframe.
  */
 const texts = import.meta.glob<string>('../../documents/*.txt', {
   query: '?raw',
