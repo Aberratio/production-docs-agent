@@ -1,4 +1,4 @@
-Od: Anna Testowa <zakupy@demo-maszyny.example>
+Od: Anna Testowa <zakupy@testowe-maszyny.example>
 Do: biuro@wzor-mechanika.example
 Data: 2026-10-16 09:12
 Temat: Zamówienie - tuleje
@@ -14,4 +14,4 @@ Płatność standardowo.
 
 Pozdrawiam
 Anna Testowa
-Dział Zakupów, Demo Maszyny S.A.
+Dział Zakupów, Testowe Maszyny S.A.

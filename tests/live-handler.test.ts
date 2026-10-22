@@ -52,7 +52,7 @@ describe('createExtractHandler', () => {
     expect(JSON.stringify(res.body)).toMatch(/ANTHROPIC_API_KEY/);
   });
 
-  it('only extracts documents from the demo catalog (no arbitrary paths)', async () => {
+  it('only extracts documents from the sample catalog (no arbitrary paths)', async () => {
     const c = client(cleanReport());
     const handle = createExtractHandler({ apiKey: 'k', clientFactory: () => c, now });
     expect((await handle(JSON.stringify({ documentId: '../.env' }), JSON_TYPE)).status).toBe(404);

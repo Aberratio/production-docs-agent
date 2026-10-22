@@ -1,7 +1,7 @@
 /**
- * Records live extractions into `recordings/<id>.json` (the files the demo replays).
+ * Records live extractions into `recordings/<id>.json` (the files the recorded mode replays).
  *
- *   npm run record              # every demo document
+ *   npm run record              # every sample document
  *   npm run record -- po-002    # selected documents
  *
  * Needs ANTHROPIC_API_KEY in `.env` (or the environment). Review the diff before committing:

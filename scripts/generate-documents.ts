@@ -1,8 +1,8 @@
 /**
- * Generates the demo PDFs from `documents/<id>.txt` into `public/documents/<id>.pdf`.
+ * Generates the sample PDFs from `documents/<id>.txt` into `public/documents/<id>.pdf`.
  * Usage: npm run docs:generate   (needs `npx playwright install chromium` once)
  *
- * The PDFs are committed, so the demo and CI never run this. E-mails stay plain text and are
+ * The PDFs are committed, so the app and CI never run this. E-mails stay plain text and are
  * copied as `.txt` so the "open original" link works for every document.
  */
 import { copyFileSync, mkdirSync } from 'node:fs';
@@ -23,7 +23,7 @@ const PAGE_CSS = `
 `;
 
 const FOOTER = `<div style="width:100%;font-size:8px;color:#666;text-align:center;font-family:Arial,sans-serif">
-  Dokument fikcyjny — dane demonstracyjne · Fictional demo document</div>`;
+  Dokument fikcyjny — dane przykładowe · Fictional sample document</div>`;
 
 async function main(): Promise<void> {
   mkdirSync(PDF_DIR, { recursive: true });

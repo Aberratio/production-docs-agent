@@ -1,6 +1,6 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
-import type { DemoDocument } from '../documents/catalog.ts';
+import type { SampleDocument } from '../documents/catalog.ts';
 import { parseExtraction, schemaFor, type Extraction } from '../domain/schema.ts';
 
 /**
@@ -29,7 +29,7 @@ export type ExtractionInput = { pdfBase64: string } | { text: string };
 export type ExtractionRequest = Anthropic.Beta.Messages.MessageCreateParamsNonStreaming;
 
 export function buildExtractionRequest(
-  doc: DemoDocument,
+  doc: SampleDocument,
   input: ExtractionInput,
   model: string = DEFAULT_MODEL,
 ): ExtractionRequest {
@@ -90,7 +90,7 @@ export interface ExtractionResult {
 
 export async function extractDocument(
   client: ParseClient,
-  doc: DemoDocument,
+  doc: SampleDocument,
   input: ExtractionInput,
   model?: string,
 ): Promise<ExtractionResult> {

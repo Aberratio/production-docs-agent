@@ -11,7 +11,7 @@ import { extractionOf, parseRecording, serializeRecording } from '../src/domain/
 import { reviewExtraction } from '../src/domain/review.ts';
 
 /**
- * Replays every recorded run over the whole demo corpus. The expected flags below are written from
+ * Replays every recorded run over the whole sample corpus. The expected flags below are written from
  * the documents themselves (what a careful reader would refuse to type into the ERP unchecked),
  * not from running the code.
  */
@@ -60,7 +60,7 @@ function replay(id: string) {
   return { recording, extraction, items, record };
 }
 
-describe('demo corpus', () => {
+describe('sample corpus', () => {
   it('has 5–10 documents mixing orders and quality reports, PDFs and e-mails', () => {
     expect(DOCUMENTS.length).toBeGreaterThanOrEqual(5);
     expect(DOCUMENTS.length).toBeLessThanOrEqual(10);
@@ -77,7 +77,7 @@ describe('demo corpus', () => {
       expect(readDocumentText(id).length).toBeGreaterThan(100);
       expect(existsSync(join(RECORDINGS_DIR, `${id}.json`))).toBe(true);
       if (doc.format === 'pdf') expect(existsSync(join(PDF_DIR, `${id}.pdf`))).toBe(true);
-      // The "open original" copy of an e-mail must be the text the demo reviews.
+      // The "open original" copy of an e-mail must be the text the app reviews.
       if (doc.format === 'email') {
         expect(readFileSync(join(PDF_DIR, `${id}.txt`), 'utf8')).toBe(readDocumentText(id));
       }
