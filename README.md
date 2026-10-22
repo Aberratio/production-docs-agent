@@ -10,13 +10,9 @@ sure about goes to a human instead of being guessed.
 Built for small and mid-sized manufacturers whose orders and inspection results are still
 retyped by hand, and for teams designing human-in-the-loop extraction with Claude.
 
-![Review of an e-mail order: the source line is highlighted and uncertain fields wait for a human](docs/screenshots/review-email-po-002.png)
+![Review of an e-mail order: the source line is highlighted and uncertain fields wait for a human](docs/screenshots/review-email-po-002-en.png)
 
-> **PL:** Agent dla małych i średnich firm produkcyjnych: czyta zamówienia i raporty jakości
-> (PDF, e-mail) i uzupełnia z nich arkusz oraz rekordy ERP. Pola niepewne, brakujące lub
-> sprzeczne nie są zgadywane: trafiają do człowieka z podanym powodem, a do eksportu idą puste do
-> czasu decyzji. Działa bez klucza API (zapisany przebieg) lub na żywo przez Claude API z kluczem
-> w `.env`. Wszystkie dokumenty i firmy są fikcyjne.
+The interface is available in English and Polish (switch in the header, or `?lang=en|pl`).
 
 ## Why
 
@@ -41,16 +37,22 @@ uncertain → export only what is resolved.**
   `open_fields`.
 - **Two modes.** A recorded run (deterministic, no key, no cost) and live extraction through the
   Claude API with the key kept on the server side.
+- **English and Polish UI.** A PL / EN switch in the header; `?lang=pl|en` picks the language
+  for links and embeds. Without it the browser's language decides, falling back to English. The
+  review reasons, field labels and the recorded model notes are translated too.
 - **Embeddable.** `?embed=1` renders a compact view for an iframe and reports its height to the
   host page.
 
-| Contradictions inside one order                                                   | Quality report accepted against its own numbers                             |
-| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| ![Contradictions in a purchase order](docs/screenshots/contradictions-po-004.png) | ![Quality report contradiction](docs/screenshots/quality-report-qr-002.png) |
+| Contradictions inside one order                                                      | Quality report accepted against its own numbers                                |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| ![Contradictions in a purchase order](docs/screenshots/contradictions-po-004-en.png) | ![Quality report contradiction](docs/screenshots/quality-report-qr-002-en.png) |
 
-| Human approves and corrects                                     | Phone                                                                       | Embedded on a phone                                                                  |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| ![Human decisions](docs/screenshots/human-decisions-po-002.png) | <img src="docs/screenshots/mobile-po-002.png" alt="Phone view" width="220"> | <img src="docs/screenshots/embed-mobile-po-003.png" alt="Embedded view" width="220"> |
+| Human approves and corrects (Polish UI)                            | Phone                                                                          | Phone, Polish UI                                                                         | Embedded on a phone                                                                     |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| ![Human decisions](docs/screenshots/human-decisions-po-002-pl.png) | <img src="docs/screenshots/mobile-po-002-en.png" alt="Phone view" width="220"> | <img src="docs/screenshots/mobile-po-002-pl.png" alt="Phone view in Polish" width="220"> | <img src="docs/screenshots/embed-mobile-po-003-en.png" alt="Embedded view" width="220"> |
+
+Every view is captured in both languages in [`docs/screenshots/`](docs/screenshots) (`-en` /
+`-pl` suffix).
 
 ## Architecture
 
@@ -75,6 +77,7 @@ flowchart LR
 | `src/domain/export`    | CSV (RFC 4180) and XLSX (SheetJS)                                     |
 | `src/live`             | request builder, extractor, `/api/extract` handler (Node only)        |
 | `src/ui`               | vanilla TypeScript + DOM, kokot.it brand tokens                       |
+| `src/i18n`             | English and Polish UI dictionaries, language choice                   |
 
 Design decisions and trade-offs: [docs/architecture.md](docs/architecture.md).
 
@@ -84,7 +87,8 @@ Design decisions and trade-offs: [docs/architecture.md](docs/architecture.md).
   that could not be resolved → **uncertain**;
 - confidence below `high` → **uncertain**, with the model's reason;
 - the quoted source is re-read: a date without a year (`03/11`) or with swappable day and month,
-  or an approximate count ("ok. 500", "kilkanaście", "~10") → **uncertain**;
+  or an approximate count ("ok. 500", Polish for "about 500"; a vague "a dozen or so"; "~10") →
+  **uncertain**;
 - dates must be real `YYYY-MM-DD` dates, quantities in pieces whole and positive, prices ≥ 0 →
   **invalid**;
 - every value needs a quoted `source_text` that occurs in the document → otherwise **not in
@@ -116,7 +120,8 @@ npm run build        # static build in dist/ (relative paths, works from any sub
 npm run preview      # serve the static build
 ```
 
-URL parameters: `?doc=po-004` opens a document, `?embed=1` hides the header for an iframe.
+URL parameters: `?doc=po-004` opens a document, `?lang=pl` or `?lang=en` sets the UI language,
+`?embed=1` hides the header for an iframe.
 
 ## Configuration
 
@@ -132,21 +137,22 @@ configuration.
 
 All documents, companies, people, addresses and numbers are **fictional**, created for this
 project. Suppliers and customers do not exist; e-mail domains use the reserved `.example` TLD.
-The UI marks this in its footer ("Sample data · fictional companies").
+The UI marks this in its footer ("Sample data · fictional companies"). The documents are Polish,
+like the paperwork of the plants this is built for, plus one English order.
 
 The eight sample documents live in [`documents/`](documents) (source text) and
 [`public/documents/`](public/documents) (generated PDFs, e-mails as text):
 
-| id     | format      | what it exercises                                                                                      |
-| ------ | ----------- | ------------------------------------------------------------------------------------------------------ |
-| po-001 | PDF         | clean order                                                                                            |
-| po-002 | e-mail      | `03/11` without a year, "ok. 500 szt.", "płatność standardowo", order date only from the e-mail header |
-| po-003 | PDF         | missing delivery date and address, a line without item code and price                                  |
-| po-004 | PDF         | quantity 1200 vs remark "1 000 szt.", stated total ≠ sum of lines, delivery before order date          |
-| po-005 | e-mail (EN) | clean order in EUR with dotted dates                                                                   |
-| qr-001 | PDF         | clean inspection report                                                                                |
-| qr-002 | PDF         | batch accepted with 6 defects where the acceptance number is 1                                         |
-| qr-003 | e-mail      | complaint: no report or batch number, "kilkanaście" defects, no decision yet                           |
+| id     | format      | what it exercises                                                                                                        |
+| ------ | ----------- | ------------------------------------------------------------------------------------------------------------------------ |
+| po-001 | PDF         | clean order                                                                                                              |
+| po-002 | e-mail      | `03/11` without a year, "ok. 500 szt." (about 500 pcs), "standard" payment terms, order date only from the e-mail header |
+| po-003 | PDF         | missing delivery date and address, a line without item code and price                                                    |
+| po-004 | PDF         | quantity 1200 vs remark "1 000 szt.", stated total ≠ sum of lines, delivery before order date                            |
+| po-005 | e-mail (EN) | clean order in EUR with dotted dates                                                                                     |
+| qr-001 | PDF         | clean inspection report                                                                                                  |
+| qr-002 | PDF         | batch accepted with 6 defects where the acceptance number is 1                                                           |
+| qr-003 | e-mail      | complaint: no report or batch number, "a dozen or so" defects, no decision yet                                           |
 
 The committed recordings are **hand-authored** to the extraction schema
 (`"source": "hand-authored"`): they show the intended output, not measured model accuracy.
@@ -160,13 +166,14 @@ npm test                    # the corpus test shows which flags changed
 
 ## Tests and quality
 
-| command                 | what it checks                                                                                                          |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `npm test`              | 258 unit tests (Vitest): review rules, decisions, mapping, export, corpus replay, live endpoint, brand tokens, contrast |
-| `npm run test:e2e`      | 12 browser tests (Playwright, Chromium) against the static build: review flow, exports, embedding                       |
-| `npm run lint`          | ESLint + Prettier                                                                                                       |
-| `npm run typecheck`     | `tsc --noEmit` (strict)                                                                                                 |
-| `npm run check:wording` | scans the build, PDFs, documents and docs for wording that must not ship                                                |
+| command                  | what it checks                                                                                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm test`               | 303 unit tests (Vitest): review rules, decisions, mapping, export, corpus replay, live endpoint, dictionaries, language and wording guards, brand tokens, contrast |
+| `npm run test:e2e`       | 16 browser tests (Playwright, Chromium) against the static build: review flow, exports, language switch, embedding                                                 |
+| `npm run lint`           | ESLint + Prettier                                                                                                                                                  |
+| `npm run typecheck`      | `tsc --noEmit` (strict)                                                                                                                                            |
+| `npm run check:wording`  | scans the build, PDFs, documents and docs for wording that must not ship                                                                                           |
+| `npm run check:language` | no Polish outside the UI dictionary and the sample data (code, comments, tests, docs in English)                                                                   |
 
 CI runs all of them on every push and pull request. `test:e2e`, `docs:generate` and `screenshots`
 need `npx playwright install chromium` once.
@@ -225,8 +232,10 @@ embeds the build with exactly this sandbox attribute, read from this README.
   date, delivery address and payment terms; po-004's quantity; qr-003's report date and
   inspector).
 - The review checks that the quoted source exists, not that the value was read correctly from it.
-- A contradiction stated only in prose (po-004's remark "łącznie 1 000 szt.") is caught only if
+- A contradiction stated only in prose (po-004's remark "1 000 pcs in total") is caught only if
   the model reports it.
+- In live mode the model writes its notes in English; the Polish UI translates the notes of the
+  recorded runs, and shows a live run's notes as the model wrote them.
 
 ## License
 
